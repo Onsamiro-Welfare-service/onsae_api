@@ -25,6 +25,8 @@ class SecurityConfig {
                 auth
                     .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/test/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/api/system/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/user/**").hasRole("USER")

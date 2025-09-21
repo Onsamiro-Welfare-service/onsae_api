@@ -53,6 +53,9 @@ dependencies {
     // Environment Variables
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
 
+    // Swagger/OpenAPI
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
