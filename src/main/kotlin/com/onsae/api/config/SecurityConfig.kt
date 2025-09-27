@@ -28,10 +28,12 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/actuator/**").permitAll()
-                    .requestMatchers("/api/auth/login/**", "/api/auth/refresh", "/api/auth/logout").permitAll()
-                    .requestMatchers("/api/auth/register/admin").permitAll()
-                    .requestMatchers("/api/auth/register/user").hasAnyRole("ADMIN", "STAFF")
-                    .requestMatchers("/api/auth/pending-admins", "/api/auth/approve-admin/**").hasRole("SYSTEM_ADMIN")
+                    .requestMatchers("/api/auth/refresh", "/api/auth/logout").permitAll()
+                    .requestMatchers("/api/system/login").permitAll()
+                    .requestMatchers("/api/admin/login", "/api/admin/register").permitAll()
+                    .requestMatchers("/api/user/login").permitAll()
+                    .requestMatchers("/api/user/register").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("/api/admin/pending", "/api/admin/approve/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/test/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/api/system/**").hasRole("SYSTEM_ADMIN")
