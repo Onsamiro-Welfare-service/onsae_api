@@ -1,4 +1,4 @@
-package com.onsae.api.user.entity
+package com.onsae.api.admin.entity
 
 enum class AdminRole {
     ADMIN,

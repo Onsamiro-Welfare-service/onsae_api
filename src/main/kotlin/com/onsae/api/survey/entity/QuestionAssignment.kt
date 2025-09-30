@@ -1,7 +1,7 @@
 package com.onsae.api.survey.entity
 
 import com.onsae.api.institution.entity.Institution
-import com.onsae.api.user.entity.Admin
+import com.onsae.api.admin.entity.Admin
 import com.onsae.api.user.entity.User
 import com.onsae.api.user.entity.UserGroup
 import jakarta.persistence.*
