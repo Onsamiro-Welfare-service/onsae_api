@@ -1,5 +1,6 @@
 package com.onsae.api.user.entity
 
+import com.onsae.api.admin.entity.Admin
 import com.onsae.api.common.entity.BaseEntity
 import com.onsae.api.institution.entity.Institution
 import com.onsae.api.survey.entity.QuestionAssignment
