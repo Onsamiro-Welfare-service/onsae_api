@@ -25,11 +25,6 @@ class Upload : BaseEntity() {
     @Column(name = "content", columnDefinition = "TEXT")
     var content: String? = null
 
-    @Column(name = "location_name", length = 100)
-    var locationName: String? = null
-
-    @Column(name = "coordinates", columnDefinition = "POINT")
-    var coordinates: String? = null
 
     @Column(name = "admin_read", nullable = false)
     var adminRead: Boolean = false
