@@ -1,6 +1,7 @@
 package com.onsae.api.survey.controller
 
 import com.onsae.api.auth.security.CustomUserPrincipal
+import com.onsae.api.survey.dto.CategoryAssignmentRequest
 import com.onsae.api.survey.dto.QuestionAssignmentRequest
 import com.onsae.api.survey.dto.QuestionAssignmentResponse
 import com.onsae.api.survey.service.QuestionAssignmentService
@@ -51,6 +52,34 @@ class QuestionAssignmentController(
         val response = questionAssignmentService.createAssignment(request, principal.institutionId!!, principal.userId)
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
+    }
+
+    @PostMapping("/by-category")
+    @Operation(
+        summary = "카테고리별 질문 할당",
+        description = "특정 카테고리의 모든 활성 질문을 사용자 또는 사용자 그룹에게 할당합니다. 관리자 권한이 필요합니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "201", description = "카테고리 질문 할당 성공"),
+            ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            ApiResponse(responseCode = "401", description = "인증 필요"),
+            ApiResponse(responseCode = "403", description = "권한 부족"),
+            ApiResponse(responseCode = "404", description = "카테고리 또는 대상을 찾을 수 없음")
+        ]
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    fun createCategoryAssignment(
+        @Valid @RequestBody request: CategoryAssignmentRequest,
+        authentication: Authentication
+    ): ResponseEntity<List<QuestionAssignmentResponse>> {
+        val principal = authentication.principal as CustomUserPrincipal
+
+        logger.info("Category assignment request by admin: ${principal.userId} for category: ${request.categoryId}")
+
+        val responses = questionAssignmentService.createCategoryAssignment(request, principal.institutionId!!, principal.userId)
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responses)
     }
 
     @GetMapping

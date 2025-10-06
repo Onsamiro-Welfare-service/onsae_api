@@ -57,7 +57,10 @@ class QuestionController(
     @GetMapping
     @Operation(
         summary = "질문 목록 조회",
-        description = "소속 기관의 질문 목록을 조회합니다. 카테고리별 필터링 가능합니다."
+        description = """소속 기관의 질문 목록을 조회합니다.
+        - categoryId: 특정 카테고리 질문만 조회
+        - uncategorized=true: 무카테고리 질문만 조회
+        - 둘 다 없으면: 전체 질문 조회"""
     )
     @ApiResponses(
         value = [
@@ -69,17 +72,21 @@ class QuestionController(
     @SecurityRequirement(name = "bearerAuth")
     fun getAllQuestions(
         @RequestParam(required = false) categoryId: Long?,
+        @RequestParam(required = false, defaultValue = "false") uncategorized: Boolean,
         authentication: Authentication
     ): ResponseEntity<List<QuestionResponse>> {
         val principal = authentication.principal as CustomUserPrincipal
-        val questions = questionService.getAllQuestions(principal.institutionId!!, categoryId)
+        val questions = questionService.getAllQuestions(principal.institutionId!!, categoryId, uncategorized)
         return ResponseEntity.ok(questions)
     }
 
     @GetMapping("/active")
     @Operation(
         summary = "활성 질문 목록 조회",
-        description = "소속 기관의 활성 상태인 질문 목록을 조회합니다."
+        description = """소속 기관의 활성 상태인 질문 목록을 조회합니다.
+        - categoryId: 특정 카테고리 질문만 조회
+        - uncategorized=true: 무카테고리 질문만 조회
+        - 둘 다 없으면: 전체 활성 질문 조회"""
     )
     @ApiResponses(
         value = [
@@ -91,10 +98,11 @@ class QuestionController(
     @SecurityRequirement(name = "bearerAuth")
     fun getActiveQuestions(
         @RequestParam(required = false) categoryId: Long?,
+        @RequestParam(required = false, defaultValue = "false") uncategorized: Boolean,
         authentication: Authentication
     ): ResponseEntity<List<QuestionResponse>> {
         val principal = authentication.principal as CustomUserPrincipal
-        val questions = questionService.getActiveQuestions(principal.institutionId!!, categoryId)
+        val questions = questionService.getActiveQuestions(principal.institutionId!!, categoryId, uncategorized)
         return ResponseEntity.ok(questions)
     }
 

@@ -62,20 +62,20 @@ class QuestionService(
         return toQuestionResponse(savedQuestion)
     }
 
-    fun getAllQuestions(institutionId: Long, categoryId: Long?): List<QuestionResponse> {
-        val questions = if (categoryId != null) {
-            questionRepository.findByInstitutionIdAndCategoryIdAndIsActive(institutionId, categoryId)
-        } else {
-            questionRepository.findByInstitutionId(institutionId)
+    fun getAllQuestions(institutionId: Long, categoryId: Long?, uncategorizedOnly: Boolean = false): List<QuestionResponse> {
+        val questions = when {
+            uncategorizedOnly -> questionRepository.findByInstitutionIdAndCategoryIsNullAndIsActive(institutionId)
+            categoryId != null -> questionRepository.findByInstitutionIdAndCategoryIdAndIsActive(institutionId, categoryId)
+            else -> questionRepository.findByInstitutionId(institutionId)
         }
         return questions.map { toQuestionResponse(it) }
     }
 
-    fun getActiveQuestions(institutionId: Long, categoryId: Long?): List<QuestionResponse> {
-        val questions = if (categoryId != null) {
-            questionRepository.findActiveByCategoryIdOrderByCreatedAtDesc(categoryId)
-        } else {
-            questionRepository.findActiveByInstitutionIdOrderByCreatedAtDesc(institutionId)
+    fun getActiveQuestions(institutionId: Long, categoryId: Long?, uncategorizedOnly: Boolean = false): List<QuestionResponse> {
+        val questions = when {
+            uncategorizedOnly -> questionRepository.findByInstitutionIdAndCategoryIsNullAndIsActive(institutionId)
+            categoryId != null -> questionRepository.findActiveByCategoryIdOrderByCreatedAtDesc(categoryId)
+            else -> questionRepository.findActiveByInstitutionIdOrderByCreatedAtDesc(institutionId)
         }
         return questions.map { toQuestionResponse(it) }
     }

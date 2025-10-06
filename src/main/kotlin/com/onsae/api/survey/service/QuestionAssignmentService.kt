@@ -3,9 +3,11 @@ package com.onsae.api.survey.service
 import com.onsae.api.admin.repository.AdminRepository
 import com.onsae.api.auth.exception.InvalidCredentialsException
 import com.onsae.api.institution.repository.InstitutionRepository
+import com.onsae.api.survey.dto.CategoryAssignmentRequest
 import com.onsae.api.survey.dto.QuestionAssignmentRequest
 import com.onsae.api.survey.dto.QuestionAssignmentResponse
 import com.onsae.api.survey.entity.QuestionAssignment
+import com.onsae.api.survey.repository.CategoryRepository
 import com.onsae.api.survey.repository.QuestionAssignmentRepository
 import com.onsae.api.survey.repository.QuestionRepository
 import com.onsae.api.user.repository.UserGroupRepository
@@ -21,6 +23,7 @@ private val logger = KotlinLogging.logger {}
 class QuestionAssignmentService(
     private val questionAssignmentRepository: QuestionAssignmentRepository,
     private val questionRepository: QuestionRepository,
+    private val categoryRepository: CategoryRepository,
     private val userRepository: UserRepository,
     private val userGroupRepository: UserGroupRepository,
     private val institutionRepository: InstitutionRepository,
@@ -89,6 +92,84 @@ class QuestionAssignmentService(
         logger.info("Question assignment created successfully: ${savedAssignment.id}")
 
         return toQuestionAssignmentResponse(savedAssignment)
+    }
+
+    fun createCategoryAssignment(request: CategoryAssignmentRequest, institutionId: Long, adminId: Long): List<QuestionAssignmentResponse> {
+        logger.info("Creating category assignment: ${request.categoryId} for institution: $institutionId")
+
+        if (request.userId == null && request.groupId == null) {
+            throw InvalidCredentialsException("사용자 또는 그룹 중 하나는 반드시 지정해야 합니다")
+        }
+
+        if (request.userId != null && request.groupId != null) {
+            throw InvalidCredentialsException("사용자와 그룹은 동시에 지정할 수 없습니다")
+        }
+
+        val institution = institutionRepository.findById(institutionId)
+            .orElseThrow { InvalidCredentialsException("존재하지 않는 기관입니다") }
+
+        val category = categoryRepository.findById(request.categoryId)
+            .orElseThrow { InvalidCredentialsException("존재하지 않는 카테고리입니다") }
+
+        if (category.institution.id != institutionId) {
+            throw InvalidCredentialsException("해당 카테고리에 대한 접근 권한이 없습니다")
+        }
+
+        val user = request.userId?.let { userId ->
+            userRepository.findById(userId)
+                .orElseThrow { InvalidCredentialsException("존재하지 않는 사용자입니다") }
+                .also { user ->
+                    if (user.institution.id != institutionId) {
+                        throw InvalidCredentialsException("해당 사용자에 대한 접근 권한이 없습니다")
+                    }
+                }
+        }
+
+        val group = request.groupId?.let { groupId ->
+            userGroupRepository.findById(groupId)
+                .orElseThrow { InvalidCredentialsException("존재하지 않는 사용자 그룹입니다") }
+                .also { group ->
+                    if (group.institution.id != institutionId) {
+                        throw InvalidCredentialsException("해당 사용자 그룹에 대한 접근 권한이 없습니다")
+                    }
+                }
+        }
+
+        val admin = adminRepository.findById(adminId).orElse(null)
+
+        // 카테고리의 활성 질문들 조회
+        val questions = questionRepository.findActiveByCategoryIdOrderByCreatedAtDesc(request.categoryId)
+
+        if (questions.isEmpty()) {
+            throw InvalidCredentialsException("해당 카테고리에 활성 질문이 없습니다")
+        }
+
+        val savedAssignments = mutableListOf<QuestionAssignment>()
+
+        questions.forEach { question ->
+            // 이미 할당되어 있는지 확인
+            val alreadyAssigned = if (user != null) {
+                questionAssignmentRepository.existsByQuestionIdAndUserId(question.id!!, user.id!!)
+            } else {
+                questionAssignmentRepository.existsByQuestionIdAndGroupId(question.id!!, group!!.id!!)
+            }
+
+            if (!alreadyAssigned) {
+                val assignment = QuestionAssignment().apply {
+                    this.institution = institution
+                    this.question = question
+                    this.user = user
+                    this.group = group
+                    this.priority = request.priority
+                    this.assignedBy = admin
+                }
+                savedAssignments.add(questionAssignmentRepository.save(assignment))
+            }
+        }
+
+        logger.info("Category assignment created successfully: ${savedAssignments.size} questions assigned")
+
+        return savedAssignments.map { toQuestionAssignmentResponse(it) }
     }
 
     fun getAllAssignments(institutionId: Long): List<QuestionAssignmentResponse> {

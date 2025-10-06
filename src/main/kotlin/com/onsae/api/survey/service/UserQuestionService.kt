@@ -40,7 +40,7 @@ class UserQuestionService(
             questionAssignmentRepository.findByGroupIdWithDetails(groupId)
         }
 
-        val allAssignments = (directAssignments + groupAssignments).distinctBy { it.id!! }
+        val allAssignments = (directAssignments + groupAssignments).distinctBy { it.question?.id!! }
 
         // 3. 응답 완료 여부 확인
         val assignmentIds = allAssignments.map { it.id!! }

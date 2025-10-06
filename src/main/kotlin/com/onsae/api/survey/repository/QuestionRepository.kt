@@ -30,6 +30,9 @@ interface QuestionRepository : JpaRepository<Question, Long> {
     @Query("SELECT q FROM Question q WHERE q.institution.id = :institutionId AND (:categoryId IS NULL OR q.category.id = :categoryId) AND q.isActive = true")
     fun findByInstitutionIdAndCategoryIdAndIsActive(institutionId: Long, categoryId: Long?): List<Question>
 
+    @Query("SELECT q FROM Question q WHERE q.institution.id = :institutionId AND q.category IS NULL AND q.isActive = true ORDER BY q.createdAt DESC")
+    fun findByInstitutionIdAndCategoryIsNullAndIsActive(institutionId: Long): List<Question>
+
     fun countByInstitutionId(institutionId: Long): Long
     fun countByCategoryId(categoryId: Long): Long
     fun countByInstitutionIdAndIsActive(institutionId: Long, isActive: Boolean): Long
