@@ -1,9 +1,14 @@
 package com.onsae.api.admin.service
 
 import com.onsae.api.admin.dto.*
+import com.onsae.api.admin.entity.Admin
+import com.onsae.api.admin.entity.AdminRole
+import com.onsae.api.admin.repository.AdminRepository
 import com.onsae.api.auth.exception.InvalidCredentialsException
+import com.onsae.api.common.entity.AccountStatus
 import com.onsae.api.common.exception.BusinessException
 import com.onsae.api.common.exception.DuplicateException
+import com.onsae.api.institution.repository.InstitutionRepository
 import mu.KotlinLogging
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -15,7 +20,9 @@ private val logger = KotlinLogging.logger {}
 @Service
 @Transactional
 class AdminRegistrationService(
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val adminRepository: AdminRepository,
+    private val institutionRepository: InstitutionRepository
 ) {
 
     fun registerAdmin(request: AdminRegisterRequest): AdminRegisterResponse {
@@ -28,34 +35,23 @@ class AdminRegistrationService(
             throw DuplicateException("이미 등록된 이메일입니다: ${request.email}")
         }
 
-        // 기관 처리
-        val institutionId = when {
-            request.institutionId != null -> {
-                // 기존 기관 확인
-                validateInstitutionExists(request.institutionId)
-                request.institutionId
-            }
-            request.institutionInfo != null -> {
-                // 새 기관 등록
-                createInstitution(request.institutionInfo)
-            }
-            else -> throw IllegalArgumentException("기관 정보가 필요합니다")
-        }
+        // 기관 존재 확인
+        validateInstitutionExists(request.institutionId)
 
         // 비밀번호 암호화
         val encodedPassword = passwordEncoder.encode(request.password)
 
-        // Admin 등록 (임시 하드코딩 - 실제 엔티티 구현 후 교체)
+        // Admin 등록
         val adminId = createAdmin(
             name = request.name,
             email = request.email,
             encodedPassword = encodedPassword,
             phone = request.phone,
             role = request.role.name,
-            institutionId = institutionId
+            institutionId = request.institutionId
         )
 
-        val institutionName = getInstitutionName(institutionId)
+        val institutionName = getInstitutionName(request.institutionId)
 
         logger.info("Admin registered successfully: adminId=$adminId, email=${request.email}")
 
@@ -64,7 +60,7 @@ class AdminRegistrationService(
             name = request.name,
             email = request.email,
             role = request.role.name,
-            institutionId = institutionId,
+            institutionId = request.institutionId,
             institutionName = institutionName,
             status = "PENDING",
             createdAt = LocalDateTime.now()
@@ -74,19 +70,18 @@ class AdminRegistrationService(
     fun getPendingAdmins(): List<PendingAdminInfo> {
         logger.info("Fetching pending admins")
 
-        // 임시 하드코딩 - 실제 Repository 구현 후 교체
-        return listOf(
+        return adminRepository.findByStatus(AccountStatus.PENDING).map { admin ->
             PendingAdminInfo(
-                id = 100L,
-                name = "대기중 관리자",
-                email = "pending@example.com",
-                phone = "010-1234-5678",
-                role = "ADMIN",
-                institutionId = 1L,
-                institutionName = "테스트 복지관",
-                createdAt = LocalDateTime.now().minusDays(1)
+                id = admin.id!!,
+                name = admin.name,
+                email = admin.email,
+                phone = admin.phone,
+                role = admin.role.name,
+                institutionId = admin.institution.id!!,
+                institutionName = admin.institution.name,
+                createdAt = admin.createdAt!!
             )
-        )
+        }
     }
 
     fun approveAdmin(adminId: Long, request: AdminApprovalRequest, approvedBy: Long): AdminApprovalResponse {
@@ -128,24 +123,16 @@ class AdminRegistrationService(
         )
     }
 
-    // 임시 메서드들 - 실제 Repository 구현 후 교체 예정
     private fun isEmailExists(email: String): Boolean {
-        // TODO: AdminRepository에서 이메일 존재 여부 확인
-        return email == "existing@example.com" // 임시 하드코딩
+        return adminRepository.existsByEmail(email)
     }
 
     private fun validateInstitutionExists(institutionId: Long) {
-        // TODO: InstitutionRepository에서 기관 존재 여부 확인
-        if (institutionId != 1L) { // 임시 하드코딩
+        if (!institutionRepository.existsById(institutionId)) {
             throw BusinessException("존재하지 않는 기관입니다", "INSTITUTION_NOT_FOUND")
         }
     }
 
-    private fun createInstitution(institutionInfo: InstitutionRegisterRequest): Long {
-        // TODO: 새 기관 생성 로직
-        logger.info("Creating new institution: ${institutionInfo.name}")
-        return 2L // 임시 하드코딩
-    }
 
     private fun createAdmin(
         name: String,
@@ -155,27 +142,39 @@ class AdminRegistrationService(
         role: String,
         institutionId: Long
     ): Long {
-        // TODO: Admin 엔티티 생성 및 저장
         logger.info("Creating admin: $name, $email")
-        return System.currentTimeMillis() // 임시 ID 생성
+
+        val institution = institutionRepository.findById(institutionId)
+            .orElseThrow { BusinessException("존재하지 않는 기관입니다", "INSTITUTION_NOT_FOUND") }
+
+        val admin = Admin().apply {
+            this.institution = institution
+            this.email = email
+            this.password = encodedPassword
+            this.name = name
+            this.role = AdminRole.valueOf(role)
+            this.phone = phone
+            this.status = AccountStatus.PENDING
+        }
+
+        return adminRepository.save(admin).id!!
     }
 
     private fun getInstitutionName(institutionId: Long): String {
-        // TODO: InstitutionRepository에서 기관명 조회
-        return when (institutionId) {
-            1L -> "기존 복지관"
-            2L -> "새 복지관"
-            else -> "알 수 없는 기관"
-        }
+        return institutionRepository.findById(institutionId)
+            .map { it.name }
+            .orElse("알 수 없는 기관")
     }
 
     private fun getAdminForApproval(adminId: Long): AdminApprovalInfo {
-        // TODO: AdminRepository에서 승인용 관리자 정보 조회
+        val admin = adminRepository.findById(adminId)
+            .orElseThrow { BusinessException("존재하지 않는 관리자입니다", "ADMIN_NOT_FOUND") }
+
         return AdminApprovalInfo(
-            id = adminId,
-            name = "대기중 관리자",
-            email = "pending@example.com",
-            status = "PENDING"
+            id = admin.id!!,
+            name = admin.name,
+            email = admin.email,
+            status = admin.status.name
         )
     }
 
@@ -185,11 +184,21 @@ class AdminRegistrationService(
         approvedBy: Long,
         rejectionReason: String?
     ) {
-        // TODO: Admin 상태 업데이트
-        logger.info("Updating admin status: adminId=$adminId, approved=$approved")
+        val admin = adminRepository.findById(adminId)
+            .orElseThrow { BusinessException("존재하지 않는 관리자입니다", "ADMIN_NOT_FOUND") }
+
+        val approver = adminRepository.findById(approvedBy)
+            .orElseThrow { BusinessException("승인자 정보를 찾을 수 없습니다", "APPROVER_NOT_FOUND") }
+
+        admin.status = if (approved) AccountStatus.APPROVED else AccountStatus.REJECTED
+        admin.approvedBy = approver
+        admin.approvedAt = LocalDateTime.now()
+        admin.rejectionReason = rejectionReason
+
+        adminRepository.save(admin)
+        logger.info("Admin status updated: adminId=$adminId, approved=$approved")
     }
 
-    // 임시 데이터 클래스들
     private data class AdminApprovalInfo(
         val id: Long,
         val name: String,

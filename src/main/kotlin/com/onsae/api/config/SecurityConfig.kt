@@ -3,6 +3,7 @@ package com.onsae.api.config
 import com.onsae.api.auth.security.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -13,6 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
@@ -29,10 +31,20 @@ class SecurityConfig(
                 auth
                     .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers("/api/auth/refresh", "/api/auth/logout").permitAll()
-                    .requestMatchers("/api/system/login").permitAll()
+                    .requestMatchers("/api/system/login", "/api/system/register").permitAll()
                     .requestMatchers("/api/admin/login", "/api/admin/register").permitAll()
+                    .requestMatchers("GET", "/api/institutions").permitAll()
+                    .requestMatchers("/api/institutions/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/user/login").permitAll()
                     .requestMatchers("/api/user/register").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("/api/user/*/generate-code").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("GET", "/api/user").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("GET", "/api/user/*/profile").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("PUT", "/api/user/*/profile").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("/api/categories/**").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("/api/user-groups/**").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("/api/questions/**").hasAnyRole("ADMIN", "STAFF")
+                    .requestMatchers("/api/question-assignments/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/admin/pending", "/api/admin/approve/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/test/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()

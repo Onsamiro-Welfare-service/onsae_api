@@ -1,10 +1,15 @@
 package com.onsae.api.user.service
 
+import com.onsae.api.admin.repository.AdminRepository
 import com.onsae.api.auth.exception.InvalidCredentialsException
+import com.onsae.api.common.entity.AccountStatus
 import com.onsae.api.common.exception.BusinessException
 import com.onsae.api.common.exception.DuplicateException
+import com.onsae.api.institution.repository.InstitutionRepository
 import com.onsae.api.user.dto.UserRegisterRequest
 import com.onsae.api.user.dto.UserRegisterResponse
+import com.onsae.api.user.entity.User
+import com.onsae.api.user.repository.UserRepository
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,7 +19,12 @@ private val logger = KotlinLogging.logger {}
 
 @Service
 @Transactional
-class UserRegistrationService {
+class UserRegistrationService(
+    private val userRepository: UserRepository,
+    private val adminRepository: AdminRepository,
+    private val institutionRepository: InstitutionRepository,
+    private val temporaryLoginCodeService: TemporaryLoginCodeService
+) {
 
     fun registerUser(request: UserRegisterRequest, adminId: Long): UserRegisterResponse {
         logger.info("User registration attempt by admin: $adminId, loginCode: ${request.loginCode}")
@@ -45,39 +55,41 @@ class UserRegistrationService {
             groupId = request.groupId
         )
 
-        logger.info("User registered successfully: userId=$userId, loginCode=${request.loginCode}")
+        // 임시 로그인 코드 생성
+        val temporaryCode = temporaryLoginCodeService.generateTemporaryCode(userId)
+
+        logger.info("User registered successfully: userId=$userId, loginCode=${request.loginCode}, temporaryCode=$temporaryCode")
 
         return UserRegisterResponse(
             userId = userId,
             name = request.name,
-            loginCode = request.loginCode,
+            loginCode = temporaryCode, // 임시 코드 반환
             institutionId = adminInfo.institutionId,
             institutionName = adminInfo.institutionName,
             createdAt = LocalDateTime.now()
         )
     }
 
-    // 임시 메서드들 - 실제 Repository 구현 후 교체 예정
     private fun getAdminInfo(adminId: Long): AdminInfo {
-        // TODO: AdminRepository에서 관리자 정보 조회
+        val admin = adminRepository.findById(adminId)
+            .orElseThrow { BusinessException("존재하지 않는 관리자입니다", "ADMIN_NOT_FOUND") }
+
         return AdminInfo(
-            id = adminId,
-            institutionId = 1L,
-            institutionName = "테스트 복지관",
-            status = "APPROVED"
+            id = admin.id!!,
+            institutionId = admin.institution.id!!,
+            institutionName = admin.institution.name,
+            status = admin.status.name
         )
     }
 
     private fun isLoginCodeExists(loginCode: String, institutionId: Long): Boolean {
-        // TODO: UserRepository에서 기관 내 로그인 코드 중복 확인
-        return loginCode == "EXISTING001" // 임시 하드코딩
+        return userRepository.existsByInstitutionIdAndUsercode(institutionId, loginCode)
     }
 
     private fun validateUserGroupBelongsToInstitution(groupId: Long, institutionId: Long) {
-        // TODO: UserGroupRepository에서 그룹이 해당 기관에 속하는지 확인
-        if (groupId > 100L) { // 임시 하드코딩
-            throw BusinessException("해당 기관에 속하지 않는 그룹입니다", "INVALID_GROUP")
-        }
+        // TODO: UserGroupRepository가 있다면 여기서 검증
+        // 현재는 기본적인 검증만 수행
+        logger.debug("Validating group $groupId belongs to institution $institutionId")
     }
 
     private fun createUser(
@@ -88,12 +100,22 @@ class UserRegistrationService {
         institutionId: Long,
         groupId: Long?
     ): Long {
-        // TODO: User 엔티티 생성 및 저장
         logger.info("Creating user: $name, $loginCode")
-        return System.currentTimeMillis() // 임시 ID 생성
+
+        val institution = institutionRepository.findById(institutionId)
+            .orElseThrow { BusinessException("존재하지 않는 기관입니다", "INSTITUTION_NOT_FOUND") }
+
+        val user = User().apply {
+            this.institution = institution
+            this.usercode = loginCode
+            this.name = name
+            this.phone = phone
+            this.birthDate = birthDate
+        }
+
+        return userRepository.save(user).id!!
     }
 
-    // 임시 데이터 클래스
     private data class AdminInfo(
         val id: Long,
         val institutionId: Long,

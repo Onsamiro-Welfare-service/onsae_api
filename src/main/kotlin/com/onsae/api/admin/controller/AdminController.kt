@@ -8,6 +8,7 @@ import com.onsae.api.auth.security.CustomUserPrincipal
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -84,6 +85,7 @@ class AdminController(
             ApiResponse(responseCode = "403", description = "시스템 관리자 권한 필요")
         ]
     )
+    @SecurityRequirement(name = "bearerAuth")
     fun getPendingAdmins(): ResponseEntity<List<PendingAdminInfo>> {
         logger.info("Fetching pending admins")
 
@@ -106,6 +108,7 @@ class AdminController(
             ApiResponse(responseCode = "404", description = "관리자를 찾을 수 없음")
         ]
     )
+    @SecurityRequirement(name = "bearerAuth")
     fun approveAdmin(
         @PathVariable adminId: Long,
         @Valid @RequestBody request: AdminApprovalRequest,

@@ -2,6 +2,8 @@ package com.onsae.api.system.controller
 
 import com.onsae.api.auth.dto.LoginResponse
 import com.onsae.api.system.dto.SystemLoginRequest
+import com.onsae.api.system.dto.SystemRegisterRequest
+import com.onsae.api.system.dto.SystemRegisterResponse
 import com.onsae.api.system.service.SystemService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -43,5 +45,28 @@ class SystemController(
         logger.info("System admin login successful - UserId: ${response.user.id}")
 
         return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/register")
+    @Operation(
+        summary = "시스템 관리자 회원가입",
+        description = "새로운 시스템 관리자를 등록합니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "201", description = "회원가입 성공"),
+            ApiResponse(responseCode = "409", description = "이미 존재하는 이메일"),
+            ApiResponse(responseCode = "400", description = "잘못된 요청")
+        ]
+    )
+    @SecurityRequirements
+    fun register(@Valid @RequestBody request: SystemRegisterRequest): ResponseEntity<SystemRegisterResponse> {
+        logger.info("System admin registration attempt - Email: ${request.email}")
+
+        val response = systemService.register(request)
+
+        logger.info("System admin registration successful - UserId: ${response.id}")
+
+        return ResponseEntity.status(201).body(response)
     }
 }
