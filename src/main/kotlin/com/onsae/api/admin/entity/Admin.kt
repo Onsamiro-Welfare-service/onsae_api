@@ -1,5 +1,6 @@
-package com.onsae.api.user.entity
+package com.onsae.api.admin.entity
 
+import com.onsae.api.common.entity.AccountStatus
 import com.onsae.api.common.entity.BaseEntity
 import com.onsae.api.institution.entity.Institution
 import com.onsae.api.survey.entity.Category

@@ -24,6 +24,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+
+    // Cache
+    implementation("com.github.ben-manes.caffeine:caffeine")
 
     // Database
     implementation("org.postgresql:postgresql")
@@ -52,6 +56,9 @@ dependencies {
 
     // Environment Variables
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
+
+    // Swagger/OpenAPI
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")

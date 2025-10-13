@@ -1,4 +1,4 @@
-package com.onsae.api.user.entity
+package com.onsae.api.system.entity
 
 import jakarta.persistence.*
 import java.time.LocalDateTime

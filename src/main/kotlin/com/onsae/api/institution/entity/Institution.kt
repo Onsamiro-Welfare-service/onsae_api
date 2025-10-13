@@ -1,7 +1,7 @@
 package com.onsae.api.institution.entity
 
 import com.onsae.api.common.entity.BaseEntity
-import com.onsae.api.user.entity.Admin
+import com.onsae.api.admin.entity.Admin
 import com.onsae.api.user.entity.User
 import com.onsae.api.survey.entity.Category
 import com.onsae.api.survey.entity.Question

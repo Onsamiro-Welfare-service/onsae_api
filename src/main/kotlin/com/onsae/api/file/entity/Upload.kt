@@ -3,7 +3,7 @@ package com.onsae.api.file.entity
 import com.onsae.api.common.entity.BaseEntity
 import com.onsae.api.institution.entity.Institution
 import com.onsae.api.user.entity.User
-import com.onsae.api.user.entity.Admin
+import com.onsae.api.admin.entity.Admin
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -25,11 +25,6 @@ class Upload : BaseEntity() {
     @Column(name = "content", columnDefinition = "TEXT")
     var content: String? = null
 
-    @Column(name = "location_name", length = 100)
-    var locationName: String? = null
-
-    @Column(name = "coordinates", columnDefinition = "POINT")
-    var coordinates: String? = null
 
     @Column(name = "admin_read", nullable = false)
     var adminRead: Boolean = false
