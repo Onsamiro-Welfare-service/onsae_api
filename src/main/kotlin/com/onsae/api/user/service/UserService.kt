@@ -10,6 +10,7 @@ import com.onsae.api.user.dto.UserProfileResponse
 import com.onsae.api.user.dto.UserUpdateRequest
 import com.onsae.api.user.dto.UserListResponse
 import com.onsae.api.user.repository.UserRepository
+import com.onsae.api.user.repository.UserGroupMemberRepository
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,7 +24,8 @@ class UserService(
     private val jwtTokenProvider: JwtTokenProvider,
     private val userRepository: UserRepository,
     private val institutionRepository: InstitutionRepository,
-    private val temporaryLoginCodeService: TemporaryLoginCodeService
+    private val temporaryLoginCodeService: TemporaryLoginCodeService,
+    private val userGroupMemberRepository: UserGroupMemberRepository
 ) {
 
     fun login(request: UserLoginRequest): LoginResponse {
@@ -149,7 +151,18 @@ class UserService(
     }
 
     fun getAllUsers(institutionId: Long): List<UserListResponse> {
-        val users = userRepository.findByInstitutionId(institutionId)
+        val users = userRepository.findByInstitutionIdOrderByCreatedAtDesc(institutionId)
+
+        val userIds = users.mapNotNull { it.id }
+        val memberships = if (userIds.isNotEmpty())
+            userGroupMemberRepository.findByUserIdInAndIsActive(userIds, true)
+        else emptyList()
+
+
+        val groupsByUserId = memberships.groupBy(
+            keySelector = { it.user.id!! },
+            valueTransform = { it.group.id!! }
+        )
         return users.map { user ->
             UserListResponse(
                 id = user.id!!,
@@ -164,7 +177,8 @@ class UserService(
                 lastLogin = user.lastLogin,
                 institutionId = user.institution.id!!,
                 institutionName = user.institution.name,
-                createdAt = user.createdAt
+                createdAt = user.createdAt,
+                groupIds = groupsByUserId[user.id!!] ?: emptyList()
             )
         }
     }

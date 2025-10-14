@@ -14,6 +14,7 @@ interface UserRepository : JpaRepository<User, Long> {
     fun findByInstitutionIdAndUsercode(institutionId: Long, usercode: String): Optional<User>
     fun existsByInstitutionIdAndUsercode(institutionId: Long, usercode: String): Boolean
     fun findByInstitutionId(institutionId: Long): List<User>
+    fun findByInstitutionIdOrderByCreatedAtDesc(institutionId: Long): List<User>
 
     // Dashboard queries
     fun countByInstitutionId(institutionId: Long): Int
