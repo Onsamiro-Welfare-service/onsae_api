@@ -24,6 +24,6 @@ data class UserRegisterRequest(
     @Schema(description = "생년월일", example = "1990-01-01")
     val birthDate: LocalDate?,
 
-    @Schema(description = "사용자 그룹 ID")
-    val groupId: Long?
+    @Schema(description = "사용자 그룹 ID 목록")
+    val groupIds: List<Long>? = null
 )

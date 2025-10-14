@@ -17,5 +17,6 @@ data class UserListResponse(
     val lastLogin: LocalDateTime?,
     val institutionId: Long,
     val institutionName: String,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    val groupIds: List<Long>
 )

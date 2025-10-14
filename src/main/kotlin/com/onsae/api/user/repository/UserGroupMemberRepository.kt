@@ -13,6 +13,7 @@ interface UserGroupMemberRepository : JpaRepository<UserGroupMember, Long> {
     fun findByGroupIdAndIsActive(groupId: Long, isActive: Boolean): List<UserGroupMember>
     fun existsByGroupIdAndUserId(groupId: Long, userId: Long): Boolean
     fun findByGroupIdAndUserId(groupId: Long, userId: Long): UserGroupMember?
+    fun findByUserIdInAndIsActive(userIds: List<Long>, isActive: Boolean): List<UserGroupMember>
 
     @Query("SELECT m FROM UserGroupMember m WHERE m.group.institution.id = :institutionId")
     fun findByInstitutionId(institutionId: Long): List<UserGroupMember>
