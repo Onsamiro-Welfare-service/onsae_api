@@ -29,7 +29,7 @@ reviews:
 
   high_level_summary: true
   high_level_summary_placeholder: "@coderabbitai summary"
-  high_level_summary_in_walkthrough: false  # 워크스루에는 안 넣기
+  high_level_summary_in_walkthrough: false
 
   auto_title_placeholder: "@coderabbitai"
   auto_title_instructions: |
@@ -42,26 +42,21 @@ reviews:
 
   collapse_walkthrough: false
   changed_files_summary: true
-  sequence_diagrams: false  # 복잡도 낮으니 끄기
+  sequence_diagrams: false
   estimate_code_review_effort: true
-  assess_linked_issues: false  # 부담 줄이기
+  assess_linked_issues: false
   related_issues: false
   related_prs: false
   suggested_labels: true
-  auto_apply_labels: false  # 수동으로 컨트롤
+  auto_apply_labels: false
   suggested_reviewers: false
   auto_assign_reviewers: false
 
   in_progress_fortune: false
   poem: false
 
-  labeling_instructions:
-    - "bug: 버그 수정"
-    - "feature: 새 기능"
-    - "refactor: 리팩토링"
-    - "performance: 성능 개선"
-    - "security: 보안 관련"
-    - "docs: 문서"
+  # 빈 배열로 설정 (기본 라벨링 사용)
+  labeling_instructions: []
 
   path_filters:
     # 빌드 산출물 제외
@@ -139,10 +134,10 @@ reviews:
   # 부담 줄인 Merge 전 체크
   pre_merge_checks:
     docstrings:
-      mode: "off"  # 처음엔 끄기, 나중에 warning으로
+      mode: "off"
     
     title:
-      mode: "off"  # 제목 형식 자유롭게
+      mode: "off"
     
     description:
       mode: "off"
@@ -174,10 +169,6 @@ reviews:
     gitleaks:
       enabled: true
     
-    # SQL 기본 체크
-    sqlfluff:
-      enabled: false  # 부담되면 끄기
-    
     # YAML 기본 체크
     yamllint:
       enabled: true
@@ -203,6 +194,8 @@ reviews:
       enabled: true
     
     # 나머지는 끄기
+    sqlfluff:
+      enabled: false
     pmd:
       enabled: false
     semgrep:
@@ -233,6 +226,36 @@ reviews:
       enabled: false
     golangci-lint:
       enabled: false
+    buf:
+      enabled: false
+    regal:
+      enabled: false
+    cppcheck:
+      enabled: false
+    circleci:
+      enabled: false
+    clippy:
+      enabled: false
+    prismaLint:
+      enabled: false
+    oxc:
+      enabled: false
+    shopifyThemeCheck:
+      enabled: false
+    luacheck:
+      enabled: false
+    brakeman:
+      enabled: false
+    dotenvLint:
+      enabled: false
+    htmlhint:
+      enabled: false
+    checkmake:
+      enabled: false
+    languagetool:
+      enabled: false
+    ast-grep:
+      essential_rules: false
 
 # =============================================================================
 # CHAT
@@ -260,25 +283,28 @@ knowledge_base:
     enabled: true
 
   code_guidelines:
-    enabled: false  # 처음엔 끄고 나중에 켜기
+    enabled: false
 
   learnings:
-    scope: "local"  # 로컬만
+    scope: "local"
 
   issues:
     scope: "local"
 
   jira:
     usage: "disabled"
+    project_keys: []
 
   linear:
     usage: "disabled"
+    team_keys: []
 
   pull_requests:
     scope: "local"
 
   mcp:
     usage: "disabled"
+    disabled_servers: []
 
 # =============================================================================
 # CODE GENERATION
@@ -287,7 +313,7 @@ knowledge_base:
 code_generation:
   docstrings:
     language: "ko-KR"
-    path_instructions: []  # 간소화
+    path_instructions: []
 
   unit_tests:
-    path_instructions: []  # 간소화
+    path_instructions: []
