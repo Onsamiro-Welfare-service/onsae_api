@@ -35,3 +35,5 @@ logging:
 app:
   file-upload:
     path: ./uploads-local
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:8081
