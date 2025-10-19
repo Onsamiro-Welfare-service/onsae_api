@@ -88,7 +88,9 @@ class AdminRegistrationService(
                 institutionName = admin.institution.name,
                 status = admin.status.name,
                 createdAt = admin.createdAt!!,
-                processedAt = admin.approvedAt,
+                lastLogin = admin.lastLogin,
+                approvedAt = admin.approvedAt,
+                approvedBy = admin.approvedBy?.name,
                 rejectionReason = admin.rejectionReason
             )
         }

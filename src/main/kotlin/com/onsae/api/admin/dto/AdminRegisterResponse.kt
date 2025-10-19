@@ -150,8 +150,14 @@ data class AdminListInfo(
     @Schema(description = "등록 일시")
     val createdAt: LocalDateTime,
 
+    @Schema(description = "마지막 로그인 일시")
+    val lastLogin: LocalDateTime?,
+
     @Schema(description = "승인/거부 일시")
-    val processedAt: LocalDateTime?,
+    val approvedAt: LocalDateTime?,
+
+    @Schema(description = "승인/거부 처리자 (시스템 관리자명)")
+    val approvedBy: String?,
 
     @Schema(description = "거부 사유")
     val rejectionReason: String?
