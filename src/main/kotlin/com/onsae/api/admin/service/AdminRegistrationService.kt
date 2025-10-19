@@ -67,11 +67,18 @@ class AdminRegistrationService(
         )
     }
 
-    fun getPendingAdmins(): List<PendingAdminInfo> {
-        logger.info("Fetching pending admins")
 
-        return adminRepository.findByStatus(AccountStatus.PENDING).map { admin ->
-            PendingAdminInfo(
+    fun getAllAdmins(status: AccountStatus? = null): List<AdminListInfo> {
+        logger.info("Fetching all admins with status filter: $status")
+
+        val admins = if (status != null) {
+            adminRepository.findByStatus(status)
+        } else {
+            adminRepository.findAll()
+        }
+
+        return admins.map { admin ->
+            AdminListInfo(
                 id = admin.id!!,
                 name = admin.name,
                 email = admin.email,
@@ -79,7 +86,10 @@ class AdminRegistrationService(
                 role = admin.role.name,
                 institutionId = admin.institution.id!!,
                 institutionName = admin.institution.name,
-                createdAt = admin.createdAt!!
+                status = admin.status.name,
+                createdAt = admin.createdAt!!,
+                processedAt = admin.approvedAt,
+                rejectionReason = admin.rejectionReason
             )
         }
     }
@@ -119,6 +129,59 @@ class AdminRegistrationService(
             processedAt = LocalDateTime.now(),
             processedBy = approvedBy,
             rejectionReason = request.rejectionReason,
+            message = message
+        )
+    }
+
+    fun changeAdminStatus(adminId: Long, request: AdminStatusChangeRequest, changedBy: Long): AdminStatusChangeResponse {
+        logger.info("Admin status change attempt: adminId=$adminId, status=${request.status}, changedBy=$changedBy")
+
+        request.validate()
+
+        val admin = adminRepository.findById(adminId)
+            .orElseThrow { BusinessException("존재하지 않는 관리자입니다", "ADMIN_NOT_FOUND") }
+
+        if (admin.status == AccountStatus.PENDING) {
+            throw BusinessException("승인 대기 중인 관리자는 상태를 변경할 수 없습니다", "INVALID_STATUS")
+        }
+
+        if (admin.status == AccountStatus.REJECTED) {
+            throw BusinessException("거부된 관리자는 상태를 변경할 수 없습니다", "INVALID_STATUS")
+        }
+
+        val changer = adminRepository.findById(changedBy)
+            .orElseThrow { BusinessException("처리자 정보를 찾을 수 없습니다", "CHANGER_NOT_FOUND") }
+
+        val newStatus = AccountStatus.valueOf(request.status)
+        val oldStatus = admin.status
+
+        admin.status = newStatus
+        admin.approvedBy = changer
+        admin.approvedAt = LocalDateTime.now()
+
+        if (request.status == "SUSPENDED") {
+            admin.rejectionReason = request.reason
+        } else if (request.status == "APPROVED") {
+            admin.rejectionReason = null
+        }
+
+        adminRepository.save(admin)
+        logger.info("Admin status changed: adminId=$adminId, from=$oldStatus to=$newStatus")
+
+        val message = when (request.status) {
+            "APPROVED" -> "관리자 계정이 활성화되었습니다"
+            "SUSPENDED" -> "관리자 계정이 정지되었습니다: ${request.reason}"
+            else -> "관리자 상태가 변경되었습니다"
+        }
+
+        return AdminStatusChangeResponse(
+            adminId = adminId,
+            name = admin.name,
+            email = admin.email,
+            status = request.status,
+            processedAt = LocalDateTime.now(),
+            processedBy = changedBy,
+            reason = request.reason,
             message = message
         )
     }
