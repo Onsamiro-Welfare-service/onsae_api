@@ -50,6 +50,12 @@ data class InstitutionDetailResponse(
     @Schema(description = "로케일", example = "ko_KR")
     val locale: String,
 
+    @Schema(description = "등록된 관리자 수")
+    val adminCount: Int,
+
+    @Schema(description = "등록된 사용자 수")
+    val userCount: Int,
+
     @Schema(description = "생성일시")
     val createdAt: LocalDateTime,
 

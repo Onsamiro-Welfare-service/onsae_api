@@ -1,6 +1,7 @@
 package com.onsae.api.institution.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDateTime
 
 @Schema(description = "기관 목록 응답")
 data class InstitutionListResponse(
@@ -20,5 +21,17 @@ data class InstitutionListResponse(
     val phone: String?,
 
     @Schema(description = "원장명", example = "김원장")
-    val directorName: String?
+    val directorName: String?,
+
+    @Schema(description = "등록된 관리자 수")
+    val adminCount: Int,
+
+    @Schema(description = "등록된 사용자 수")
+    val userCount: Int,
+
+    @Schema(description = "기관 활성화 상태")
+    val isActive: Boolean,
+
+    @Schema(description = "등록 일시")
+    val createdAt: LocalDateTime
 )

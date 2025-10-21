@@ -1,10 +1,12 @@
 package com.onsae.api.institution.service
 
+import com.onsae.api.admin.repository.AdminRepository
 import com.onsae.api.common.exception.BusinessException
 import com.onsae.api.common.exception.DuplicateException
 import com.onsae.api.institution.dto.*
 import com.onsae.api.institution.entity.Institution
 import com.onsae.api.institution.repository.InstitutionRepository
+import com.onsae.api.user.repository.UserRepository
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,20 +16,30 @@ private val logger = KotlinLogging.logger {}
 @Service
 @Transactional(readOnly = true)
 class InstitutionService(
-    private val institutionRepository: InstitutionRepository
+    private val institutionRepository: InstitutionRepository,
+    private val adminRepository: AdminRepository,
+    private val userRepository: UserRepository
 ) {
 
     fun getActiveInstitutions(): List<InstitutionListResponse> {
         logger.info("Fetching active institutions")
 
         return institutionRepository.findByIsActiveTrue().map { institution ->
+            val institutionId = institution.id!!
+            val adminCount = adminRepository.countByInstitutionId(institutionId)
+            val userCount = userRepository.countByInstitutionId(institutionId)
+
             InstitutionListResponse(
-                id = institution.id!!,
+                id = institutionId,
                 name = institution.name,
                 businessNumber = institution.businessNumber,
                 address = institution.address,
                 phone = institution.phone,
-                directorName = institution.directorName
+                directorName = institution.directorName,
+                adminCount = adminCount,
+                userCount = userCount,
+                isActive = institution.isActive,
+                createdAt = institution.createdAt!!
             )
         }
     }
@@ -37,6 +49,9 @@ class InstitutionService(
 
         val institution = institutionRepository.findById(id)
             .orElseThrow { BusinessException("존재하지 않는 기관입니다", "INSTITUTION_NOT_FOUND") }
+
+        val adminCount = adminRepository.countByInstitutionId(id)
+        val userCount = userRepository.countByInstitutionId(id)
 
         return InstitutionDetailResponse(
             id = institution.id!!,
@@ -54,6 +69,8 @@ class InstitutionService(
             isActive = institution.isActive,
             timezone = institution.timezone,
             locale = institution.locale,
+            adminCount = adminCount,
+            userCount = userCount,
             createdAt = institution.createdAt!!,
             updatedAt = institution.updatedAt!!
         )

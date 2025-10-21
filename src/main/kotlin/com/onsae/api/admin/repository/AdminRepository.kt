@@ -14,4 +14,5 @@ interface AdminRepository : JpaRepository<Admin, Long> {
     fun existsByInstitutionIdAndEmail(institutionId: Long, email: String): Boolean
     fun findByStatus(status: AccountStatus): List<Admin>
     fun findByInstitutionId(institutionId: Long): List<Admin>
+    fun countByInstitutionId(institutionId: Long): Int
 }
