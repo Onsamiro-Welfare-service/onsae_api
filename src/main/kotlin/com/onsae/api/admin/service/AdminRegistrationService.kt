@@ -71,9 +71,9 @@ class AdminRegistrationService(
         logger.info("Fetching all admins with status filter: $status")
 
         val admins = if (status != null) {
-            adminRepository.findByStatus(status)
+            adminRepository.findByStatusWithRelations(status)
         } else {
-            adminRepository.findAll()
+            adminRepository.findAllWithRelations()
         }
 
         return admins.map { admin ->
