@@ -8,10 +8,10 @@ data class UserGroupsResponse(
     val groups: List<GroupInfo>,
 
     @Schema(description = "총 멤버 수")
-    val totalMembers: Int,
+    val totalMembers: Long,
 
     @Schema(description = "그룹 미소속 멤버 수")
-    val ungroupedMembers: Int
+    val ungroupedMembers: Long
 )
 
 @Schema(description = "그룹 정보")

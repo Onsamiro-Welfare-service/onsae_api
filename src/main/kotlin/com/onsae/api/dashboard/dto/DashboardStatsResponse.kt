@@ -5,10 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(description = "대시보드 핵심 통계 응답")
 data class DashboardStatsResponse(
     @Schema(description = "총 사용자 수")
-    val totalUsers: Int,
+    val totalUsers: Long,
 
     @Schema(description = "활성 사용자 수")
-    val activeUsers: Int,
+    val activeUsers: Long,
 
     @Schema(description = "총 사용자 변화량")
     val totalUsersChange: ChangeInfo,
@@ -29,7 +29,7 @@ data class DashboardStatsResponse(
 @Schema(description = "변화 정보")
 data class ChangeInfo(
     @Schema(description = "변화량", example = "12")
-    val value: Int,
+    val value: Long,
 
     @Schema(description = "기간", example = "이번 주")
     val period: String
