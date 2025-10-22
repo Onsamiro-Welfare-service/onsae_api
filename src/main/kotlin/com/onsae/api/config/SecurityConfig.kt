@@ -48,7 +48,7 @@ class SecurityConfig(
                     // Admin endpoints - specific patterns for SYSTEM_ADMIN first
                     .requestMatchers("GET", "/api/admin").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("PUT", "/api/admin/*/status").hasRole("SYSTEM_ADMIN")
-                    .requestMatchers("/api/admin/pending", "/api/admin/approve/**").hasRole("SYSTEM_ADMIN")
+                    .requestMatchers("/api/admin/approve/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/test/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
