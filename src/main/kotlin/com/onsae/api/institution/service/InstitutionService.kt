@@ -26,12 +26,13 @@ class InstitutionService(
 
         val institutions = institutionRepository.findByIsActiveTrue()
         val institutionIds = institutions.map { it.id!! }
+        if (institutionIds.isEmpty()) return emptyList()
 
         // Batch query to avoid N+1
         val adminCounts = adminRepository.countByInstitutionIds(institutionIds)
-            .associate { it.getInstitutionId() to it.getCount().toInt() }
+            .associate { it.getInstitutionId() to it.getCount() }
         val userCounts = userRepository.countByInstitutionIds(institutionIds)
-            .associate { it.getInstitutionId() to it.getCount().toInt() }
+            .associate { it.getInstitutionId() to it.getCount() }
 
         return institutions.map { institution ->
             val institutionId = institution.id!!
@@ -43,8 +44,8 @@ class InstitutionService(
                 address = institution.address,
                 phone = institution.phone,
                 directorName = institution.directorName,
-                adminCount = adminCounts[institutionId] ?: 0,
-                userCount = userCounts[institutionId] ?: 0,
+                adminCount = adminCounts[institutionId] ?: 0L,
+                userCount = userCounts[institutionId] ?: 0L,
                 isActive = institution.isActive,
                 createdAt = institution.createdAt
             )

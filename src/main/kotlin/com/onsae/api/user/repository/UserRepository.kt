@@ -17,8 +17,8 @@ interface UserRepository : JpaRepository<User, Long> {
     fun findByInstitutionIdOrderByCreatedAtDesc(institutionId: Long): List<User>
 
     // Dashboard queries
-    fun countByInstitutionId(institutionId: Long): Int
-    fun countByInstitutionIdAndIsActiveTrue(institutionId: Long): Int
+    fun countByInstitutionId(institutionId: Long): Long
+    fun countByInstitutionIdAndIsActiveTrue(institutionId: Long): Long
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.institution.id = :institutionId AND u.createdAt < :beforeDate")
     fun countByInstitutionIdAndCreatedAtBefore(institutionId: Long, beforeDate: LocalDateTime): Int

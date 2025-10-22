@@ -51,10 +51,10 @@ data class InstitutionDetailResponse(
     val locale: String,
 
     @Schema(description = "등록된 관리자 수")
-    val adminCount: Int,
+    val adminCount: Long,
 
     @Schema(description = "등록된 사용자 수")
-    val userCount: Int,
+    val userCount: Long,
 
     @Schema(description = "생성일시")
     val createdAt: LocalDateTime,

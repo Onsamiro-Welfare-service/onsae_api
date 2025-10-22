@@ -15,7 +15,7 @@ interface AdminRepository : JpaRepository<Admin, Long> {
     fun existsByInstitutionIdAndEmail(institutionId: Long, email: String): Boolean
     fun findByStatus(status: AccountStatus): List<Admin>
     fun findByInstitutionId(institutionId: Long): List<Admin>
-    fun countByInstitutionId(institutionId: Long): Int
+    fun countByInstitutionId(institutionId: Long): Long
 
     @Query("SELECT a FROM Admin a LEFT JOIN FETCH a.institution LEFT JOIN FETCH a.approvedBy WHERE a.status = :status")
     fun findByStatusWithRelations(status: AccountStatus): List<Admin>
