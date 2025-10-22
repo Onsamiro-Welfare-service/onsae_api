@@ -4,7 +4,6 @@ import com.onsae.api.admin.dto.*
 import com.onsae.api.admin.entity.Admin
 import com.onsae.api.admin.entity.AdminRole
 import com.onsae.api.admin.repository.AdminRepository
-import com.onsae.api.auth.exception.InvalidCredentialsException
 import com.onsae.api.common.entity.AccountStatus
 import com.onsae.api.common.exception.BusinessException
 import com.onsae.api.common.exception.DuplicateException
@@ -62,7 +61,7 @@ class AdminRegistrationService(
             role = request.role.name,
             institutionId = request.institutionId,
             institutionName = institutionName,
-            status = "PENDING",
+            status = AccountStatus.PENDING,
             createdAt = LocalDateTime.now()
         )
     }
@@ -86,8 +85,8 @@ class AdminRegistrationService(
                 role = admin.role.name,
                 institutionId = admin.institution.id!!,
                 institutionName = admin.institution.name,
-                status = admin.status.name,
-                createdAt = admin.createdAt!!,
+                status = admin.status,
+                createdAt = admin.createdAt,
                 lastLogin = admin.lastLogin,
                 approvedAt = admin.approvedAt,
                 approvedBy = admin.approvedBy?.name,
@@ -103,7 +102,7 @@ class AdminRegistrationService(
 
         // Admin 정보 조회
         val admin = getAdminForApproval(adminId)
-        if (admin.status != "PENDING") {
+        if (admin.status != AccountStatus.PENDING) {
             throw BusinessException("승인 대기 상태가 아닌 관리자입니다", "INVALID_STATUS")
         }
 
@@ -154,25 +153,24 @@ class AdminRegistrationService(
         val changer = adminRepository.findById(changedBy)
             .orElseThrow { BusinessException("처리자 정보를 찾을 수 없습니다", "CHANGER_NOT_FOUND") }
 
-        val newStatus = AccountStatus.valueOf(request.status)
         val oldStatus = admin.status
 
-        admin.status = newStatus
+        admin.status = request.status
         admin.approvedBy = changer
         admin.approvedAt = LocalDateTime.now()
 
-        if (request.status == "SUSPENDED") {
+        if (request.status == AccountStatus.SUSPENDED) {
             admin.rejectionReason = request.reason
-        } else if (request.status == "APPROVED") {
+        } else if (request.status == AccountStatus.APPROVED) {
             admin.rejectionReason = null
         }
 
         adminRepository.save(admin)
-        logger.info("Admin status changed: adminId=$adminId, from=$oldStatus to=$newStatus")
+        logger.info("Admin status changed: adminId=$adminId, from=$oldStatus to=${request.status}")
 
         val message = when (request.status) {
-            "APPROVED" -> "관리자 계정이 활성화되었습니다"
-            "SUSPENDED" -> "관리자 계정이 정지되었습니다: ${request.reason}"
+            AccountStatus.APPROVED -> "관리자 계정이 활성화되었습니다"
+            AccountStatus.SUSPENDED -> "관리자 계정이 정지되었습니다: ${request.reason}"
             else -> "관리자 상태가 변경되었습니다"
         }
 
@@ -239,7 +237,7 @@ class AdminRegistrationService(
             id = admin.id!!,
             name = admin.name,
             email = admin.email,
-            status = admin.status.name
+            status = admin.status
         )
     }
 
@@ -268,6 +266,6 @@ class AdminRegistrationService(
         val id: Long,
         val name: String,
         val email: String,
-        val status: String
+        val status: AccountStatus
     )
 }

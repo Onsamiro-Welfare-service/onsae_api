@@ -1,5 +1,6 @@
 package com.onsae.api.admin.dto
 
+import com.onsae.api.common.entity.AccountStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -24,7 +25,7 @@ data class AdminRegisterResponse(
     val institutionName: String,
 
     @Schema(description = "승인 상태")
-    val status: String,
+    val status: AccountStatus,
 
     @Schema(description = "등록 일시")
     val createdAt: LocalDateTime,
@@ -79,16 +80,16 @@ data class AdminApprovalResponse(
 @Schema(description = "관리자 상태 변경 요청")
 data class AdminStatusChangeRequest(
     @Schema(description = "변경할 상태 (APPROVED, SUSPENDED)")
-    val status: String,
+    val status: AccountStatus,
 
     @Schema(description = "변경 사유")
     val reason: String?
 ) {
     fun validate() {
-        if (status !in listOf("APPROVED", "SUSPENDED")) {
+        if (status !in listOf(AccountStatus.APPROVED, AccountStatus.SUSPENDED)) {
             throw IllegalArgumentException("유효하지 않은 상태입니다. APPROVED 또는 SUSPENDED만 가능합니다")
         }
-        if (status == "SUSPENDED" && reason.isNullOrBlank()) {
+        if (status == AccountStatus.SUSPENDED && reason.isNullOrBlank()) {
             throw IllegalArgumentException("계정 정지시 사유는 필수입니다")
         }
     }
@@ -106,7 +107,7 @@ data class AdminStatusChangeResponse(
     val email: String,
 
     @Schema(description = "변경된 상태")
-    val status: String,
+    val status: AccountStatus,
 
     @Schema(description = "처리 일시")
     val processedAt: LocalDateTime,
@@ -145,7 +146,7 @@ data class AdminListInfo(
     val institutionName: String,
 
     @Schema(description = "계정 상태")
-    val status: String,
+    val status: AccountStatus,
 
     @Schema(description = "등록 일시")
     val createdAt: LocalDateTime,
