@@ -126,7 +126,8 @@ class GlobalExceptionHandler {
         CategoryNotFoundException::class,
         QuestionAssignmentNotFoundException::class,
         TemplateNotFoundException::class,
-        InvalidResponseDataException::class
+        InvalidResponseDataException::class,
+        ResponseNotFoundException::class
     )
     fun handleSurveyException(
         ex: BusinessException,
