@@ -72,4 +72,68 @@ interface QuestionResponseRepository : JpaRepository<QuestionResponse, Long> {
         AND qr.responseData IS NOT NULL
     """)
     fun countCompletedByGroupId(@Param("groupId") groupId: Long): Int
+
+    // Admin response queries
+    @Query("""
+        SELECT qr FROM QuestionResponse qr
+        LEFT JOIN FETCH qr.assignment a
+        LEFT JOIN FETCH qr.user u
+        LEFT JOIN FETCH qr.question q
+        WHERE u.id = :userId
+        AND u.institution.id = :institutionId
+        ORDER BY qr.submittedAt DESC
+    """)
+    fun findByUserIdAndInstitutionIdWithDetails(
+        @Param("userId") userId: Long,
+        @Param("institutionId") institutionId: Long
+    ): List<QuestionResponse>
+
+    @Query("""
+        SELECT qr FROM QuestionResponse qr
+        LEFT JOIN FETCH qr.assignment a
+        LEFT JOIN FETCH qr.user u
+        LEFT JOIN FETCH qr.question q
+        WHERE a.id = :assignmentId
+        AND a.institution.id = :institutionId
+        ORDER BY qr.submittedAt DESC
+    """)
+    fun findByAssignmentIdAndInstitutionIdWithDetails(
+        @Param("assignmentId") assignmentId: Long,
+        @Param("institutionId") institutionId: Long
+    ): List<QuestionResponse>
+
+    @Query("""
+        SELECT qr FROM QuestionResponse qr
+        LEFT JOIN FETCH qr.assignment a
+        LEFT JOIN FETCH qr.user u
+        LEFT JOIN FETCH qr.question q
+        WHERE u.id = :userId
+        AND u.institution.id = :institutionId
+        AND qr.submittedAt BETWEEN :startDate AND :endDate
+        ORDER BY qr.submittedAt DESC
+    """)
+    fun findByUserIdAndInstitutionIdAndDateRange(
+        @Param("userId") userId: Long,
+        @Param("institutionId") institutionId: Long,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): List<QuestionResponse>
+
+    @Query("""
+        SELECT qr FROM QuestionResponse qr
+        LEFT JOIN FETCH qr.assignment a
+        LEFT JOIN FETCH qr.user u
+        LEFT JOIN FETCH qr.question q
+        WHERE q.id = :questionId
+        AND u.id = :userId
+        AND u.institution.id = :institutionId
+        AND DATE(qr.submittedAt) = DATE(:date)
+        ORDER BY qr.submittedAt DESC
+    """)
+    fun findByQuestionIdAndUserIdAndDateWithDetails(
+        @Param("questionId") questionId: Long,
+        @Param("userId") userId: Long,
+        @Param("institutionId") institutionId: Long,
+        @Param("date") date: LocalDateTime
+    ): List<QuestionResponse>
 }

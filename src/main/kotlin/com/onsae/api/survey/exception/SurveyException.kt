@@ -47,3 +47,8 @@ class TemplateAlreadyExistsException(
     message: String = "Template already exists",
     code: String = "TEMPLATE_ALREADY_EXISTS"
 ) : BusinessException(message, code, HttpStatus.CONFLICT)
+
+class ResponseNotFoundException(
+    message: String = "Response not found",
+    code: String = "RESPONSE_NOT_FOUND"
+) : BusinessException(message, code, HttpStatus.NOT_FOUND)
