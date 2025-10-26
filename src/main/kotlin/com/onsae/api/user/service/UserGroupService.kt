@@ -210,7 +210,7 @@ class UserGroupService(
             groupId = member.group.id!!,
             groupName = member.group.name,
             userId = member.user.id!!,
-            usercode = member.user.usercode,
+            username = member.user.username,
             userName = member.user.name,
             joinedAt = member.joinedAt,
             isActive = member.isActive,

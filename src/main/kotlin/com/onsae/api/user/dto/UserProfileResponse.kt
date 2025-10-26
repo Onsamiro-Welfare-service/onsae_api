@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 
 data class UserProfileResponse(
     val id: Long,
-    val usercode: String,
+    val username: String,
     val name: String,
     val phone: String?,
     val address: String?,

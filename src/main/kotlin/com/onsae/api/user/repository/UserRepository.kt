@@ -9,10 +9,10 @@ import java.util.*
 
 @Repository
 interface UserRepository : JpaRepository<User, Long> {
-    fun findByUsercode(usercode: String): Optional<User>
-    fun existsByUsercode(usercode: String): Boolean
-    fun findByInstitutionIdAndUsercode(institutionId: Long, usercode: String): Optional<User>
-    fun existsByInstitutionIdAndUsercode(institutionId: Long, usercode: String): Boolean
+    fun findByUsername(username: String): Optional<User>
+    fun existsByUsername(username: String): Boolean
+    fun findByInstitutionIdAndUsername(institutionId: Long, username: String): Optional<User>
+    fun existsByInstitutionIdAndUsername(institutionId: Long, username: String): Boolean
     fun findByInstitutionId(institutionId: Long): List<User>
     fun findByInstitutionIdOrderByCreatedAtDesc(institutionId: Long): List<User>
     fun findByIdAndInstitutionId(userId: Long, institutionId: Long): User?

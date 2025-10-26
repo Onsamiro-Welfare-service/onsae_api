@@ -5,7 +5,11 @@ import jakarta.validation.constraints.NotBlank
 
 @Schema(description = "일반 사용자 로그인 요청")
 data class UserLoginRequest(
-    @field:NotBlank(message = "로그인 코드는 필수입니다")
-    @Schema(description = "사용자 로그인 코드", example = "USER001")
-    val loginCode: String
+    @field:NotBlank(message = "사용자명은 필수입니다")
+    @Schema(description = "사용자명", example = "user001")
+    val username: String,
+
+    @field:NotBlank(message = "비밀번호는 필수입니다")
+    @Schema(description = "비밀번호", example = "password123!")
+    val password: String
 )

@@ -142,14 +142,6 @@ class AdminRegistrationService(
         val admin = adminRepository.findById(adminId)
             .orElseThrow { BusinessException("존재하지 않는 관리자입니다", "ADMIN_NOT_FOUND") }
 
-        if (admin.status == AccountStatus.PENDING) {
-            throw BusinessException("승인 대기 중인 관리자는 상태를 변경할 수 없습니다", "INVALID_STATUS")
-        }
-
-        if (admin.status == AccountStatus.REJECTED) {
-            throw BusinessException("거부된 관리자는 상태를 변경할 수 없습니다", "INVALID_STATUS")
-        }
-
         val changer = adminRepository.findById(changedBy)
             .orElseThrow { BusinessException("처리자 정보를 찾을 수 없습니다", "CHANGER_NOT_FOUND") }
 
@@ -159,17 +151,26 @@ class AdminRegistrationService(
         admin.approvedBy = changer
         admin.approvedAt = LocalDateTime.now()
 
-        if (request.status == AccountStatus.SUSPENDED) {
-            admin.rejectionReason = request.reason
-        } else if (request.status == AccountStatus.APPROVED) {
-            admin.rejectionReason = null
+        when (request.status) {
+            AccountStatus.SUSPENDED, AccountStatus.REJECTED -> {
+                admin.rejectionReason = request.reason
+            }
+            AccountStatus.APPROVED -> {
+                admin.rejectionReason = null
+            }
+            else -> {}
         }
 
         adminRepository.save(admin)
         logger.info("Admin status changed: adminId=$adminId, from=$oldStatus to=${request.status}")
 
         val message = when (request.status) {
-            AccountStatus.APPROVED -> "관리자 계정이 활성화되었습니다"
+            AccountStatus.APPROVED -> if (oldStatus == AccountStatus.PENDING) {
+                "관리자가 승인되었습니다"
+            } else {
+                "관리자 계정이 활성화되었습니다"
+            }
+            AccountStatus.REJECTED -> "관리자가 거부되었습니다: ${request.reason}"
             AccountStatus.SUSPENDED -> "관리자 계정이 정지되었습니다: ${request.reason}"
             else -> "관리자 상태가 변경되었습니다"
         }

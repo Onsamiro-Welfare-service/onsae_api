@@ -231,7 +231,7 @@ class DashboardService(
                         user = UserBasicInfo(
                             id = response.user?.id ?: 0,
                             name = response.user?.name ?: "Unknown",
-                            code = response.user?.usercode ?: ""
+                            code = response.user?.username ?: ""
                         ),
                         question = response.question?.let {
                             QuestionBasicInfo(
@@ -262,7 +262,7 @@ class DashboardService(
                         user = UserBasicInfo(
                             id = upload.user?.id ?: 0,
                             name = upload.user?.name ?: "Unknown",
-                            code = upload.user?.usercode ?: ""
+                            code = upload.user?.username ?: ""
                         ),
                         question = null,
                         upload = UploadBasicInfo(
