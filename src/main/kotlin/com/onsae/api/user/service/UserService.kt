@@ -24,19 +24,21 @@ class UserService(
     private val jwtTokenProvider: JwtTokenProvider,
     private val userRepository: UserRepository,
     private val institutionRepository: InstitutionRepository,
-    private val temporaryLoginCodeService: TemporaryLoginCodeService,
-    private val userGroupMemberRepository: UserGroupMemberRepository
+    private val userGroupMemberRepository: UserGroupMemberRepository,
+    private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder
 ) {
 
     fun login(request: UserLoginRequest): LoginResponse {
-        logger.info("User login attempt with code: ${request.loginCode}")
+        logger.info("User login attempt with username: ${request.username}")
 
-        // 임시 로그인 코드 검증 및 사용자 ID 조회
-        val userId = temporaryLoginCodeService.validateAndConsumeCode(request.loginCode)
-            ?: throw InvalidCredentialsException("올바르지 않거나 만료된 로그인 코드입니다")
+        // username으로 사용자 조회
+        val user = userRepository.findByUsername(request.username)
+            .orElseThrow { InvalidCredentialsException("사용자명 또는 비밀번호가 올바르지 않습니다") }
 
-        val user = userRepository.findById(userId)
-            .orElseThrow { InvalidCredentialsException("존재하지 않는 사용자입니다") }
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(request.password, user.password)) {
+            throw InvalidCredentialsException("사용자명 또는 비밀번호가 올바르지 않습니다")
+        }
 
         if (!user.isActive) {
             throw InvalidCredentialsException("비활성화된 계정입니다")
@@ -61,7 +63,7 @@ class UserService(
         val refreshToken = jwtTokenProvider.generateRefreshToken(user.id!!)
         val expiresAt = LocalDateTime.now().plusHours(24)
 
-        logger.info("User login successful for code: ${request.loginCode}")
+        logger.info("User login successful for username: ${request.username}")
 
         return LoginResponse(
             accessToken = accessToken,
@@ -85,7 +87,7 @@ class UserService(
 
         return UserProfileResponse(
             id = user.id!!,
-            usercode = user.usercode,
+            username = user.username,
             name = user.name,
             phone = user.phone,
             address = user.address,
@@ -128,7 +130,7 @@ class UserService(
 
         return UserProfileResponse(
             id = savedUser.id!!,
-            usercode = savedUser.usercode,
+            username = savedUser.username,
             name = savedUser.name,
             phone = savedUser.phone,
             address = savedUser.address,
@@ -166,7 +168,7 @@ class UserService(
         return users.map { user ->
             UserListResponse(
                 id = user.id!!,
-                usercode = user.usercode,
+                username = user.username,
                 name = user.name,
                 phone = user.phone,
                 birthDate = user.birthDate,
@@ -193,7 +195,7 @@ class UserService(
 
         return UserProfileResponse(
             id = user.id!!,
-            usercode = user.usercode,
+            username = user.username,
             name = user.name,
             phone = user.phone,
             address = user.address,
@@ -240,7 +242,7 @@ class UserService(
 
         return UserProfileResponse(
             id = savedUser.id!!,
-            usercode = savedUser.usercode,
+            username = savedUser.username,
             name = savedUser.name,
             phone = savedUser.phone,
             address = savedUser.address,

@@ -26,13 +26,13 @@ class UserRegistrationService(
     private val userRepository: UserRepository,
     private val adminRepository: AdminRepository,
     private val institutionRepository: InstitutionRepository,
-    private val temporaryLoginCodeService: TemporaryLoginCodeService,
     private val userGroupRepository: UserGroupRepository,
-    private val userGroupMemberRepository: UserGroupMemberRepository
+    private val userGroupMemberRepository: UserGroupMemberRepository,
+    private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder
 ) {
 
     fun registerUser(request: UserRegisterRequest, adminId: Long): UserRegisterResponse {
-        logger.info("User registration attempt by admin: $adminId, loginCode: ${request.loginCode}")
+        logger.info("User registration attempt by admin: $adminId, username: ${request.username}")
 
         // Admin 정보 조회 (기관 ID 확인용)
         val adminInfo = getAdminInfo(adminId)
@@ -40,9 +40,9 @@ class UserRegistrationService(
             throw InvalidCredentialsException("승인된 관리자만 사용자를 등록할 수 있습니다")
         }
 
-        // 로그인 코드 중복 검사 (기관 내에서)
-        if (isLoginCodeExists(request.loginCode, adminInfo.institutionId)) {
-            throw DuplicateException("이미 사용 중인 로그인 코드입니다: ${request.loginCode}")
+        // 사용자명 중복 검사 (기관 내에서)
+        if (isUsernameExists(request.username, adminInfo.institutionId)) {
+            throw DuplicateException("이미 사용 중인 사용자명입니다: ${request.username}")
         }
 
         // 그룹 검증 (해당 기관의 그룹인지 확인)
@@ -50,10 +50,11 @@ class UserRegistrationService(
             validateUserGroupsBelongToInstitution(request.groupIds, adminInfo.institutionId)
         }
 
-        // User 등록 (임시 하드코딩 - 실제 엔티티 구현 후 교체)
+        // User 등록
         val userId = createUser(
             name = request.name,
-            loginCode = request.loginCode,
+            username = request.username,
+            password = request.password,
             phone = request.phone,
             birthDate = request.birthDate,
             institutionId = adminInfo.institutionId
@@ -64,15 +65,12 @@ class UserRegistrationService(
             addUserToGroups(userId, request.groupIds, adminInfo.institutionId, adminInfo.id)
         }
 
-        // 임시 로그인 코드 생성
-        val temporaryCode = temporaryLoginCodeService.generateTemporaryCode(userId)
-
-        logger.info("User registered successfully: userId=$userId, loginCode=${request.loginCode}, temporaryCode=$temporaryCode")
+        logger.info("User registered successfully: userId=$userId, username=${request.username}")
 
         return UserRegisterResponse(
             userId = userId,
             name = request.name,
-            loginCode = temporaryCode, // 임시 코드 반환
+            username = request.username,
             institutionId = adminInfo.institutionId,
             institutionName = adminInfo.institutionName,
             createdAt = LocalDateTime.now()
@@ -91,8 +89,8 @@ class UserRegistrationService(
         )
     }
 
-    private fun isLoginCodeExists(loginCode: String, institutionId: Long): Boolean {
-        return userRepository.existsByInstitutionIdAndUsercode(institutionId, loginCode)
+    private fun isUsernameExists(username: String, institutionId: Long): Boolean {
+        return userRepository.existsByInstitutionIdAndUsername(institutionId, username)
     }
 
     private fun validateUserGroupBelongsToInstitution(groupId: Long, institutionId: Long) {
@@ -103,19 +101,21 @@ class UserRegistrationService(
 
     private fun createUser(
         name: String,
-        loginCode: String,
+        username: String,
+        password: String,
         phone: String?,
         birthDate: java.time.LocalDate?,
         institutionId: Long
     ): Long {
-        logger.info("Creating user: $name, $loginCode")
+        logger.info("Creating user: $name, $username")
 
         val institution = institutionRepository.findById(institutionId)
             .orElseThrow { BusinessException("존재하지 않는 기관입니다", "INSTITUTION_NOT_FOUND") }
 
         val user = User().apply {
             this.institution = institution
-            this.usercode = loginCode
+            this.username = username
+            this.password = passwordEncoder.encode(password)
             this.name = name
             this.phone = phone
             this.birthDate = birthDate

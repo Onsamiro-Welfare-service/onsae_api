@@ -7,7 +7,7 @@ data class UserGroupMemberResponse(
     val groupId: Long,
     val groupName: String,
     val userId: Long,
-    val usercode: String,
+    val username: String,
     val userName: String,
     val joinedAt: LocalDateTime,
     val isActive: Boolean,

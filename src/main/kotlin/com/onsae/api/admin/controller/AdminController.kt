@@ -106,7 +106,14 @@ class AdminController(
     @PutMapping("/{adminId}/status")
     @Operation(
         summary = "관리자 상태 변경",
-        description = "승인된 관리자의 상태를 변경합니다 (활성화/정지). 시스템 관리자 권한이 필요합니다."
+        description = """관리자의 상태를 변경합니다.
+
+        - PENDING → APPROVED: 승인 대기 중인 관리자 승인
+        - PENDING → REJECTED: 승인 대기 중인 관리자 거부
+        - APPROVED → SUSPENDED: 승인된 관리자 정지
+        - SUSPENDED → APPROVED: 정지된 관리자 재활성화
+
+        시스템 관리자 권한이 필요합니다."""
     )
     @ApiResponses(
         value = [

@@ -10,7 +10,6 @@ import com.onsae.api.user.dto.UserUpdateRequest
 import com.onsae.api.user.dto.UserListResponse
 import com.onsae.api.user.service.UserRegistrationService
 import com.onsae.api.user.service.UserService
-import com.onsae.api.user.service.TemporaryLoginCodeService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -31,13 +30,13 @@ private val logger = KotlinLogging.logger {}
 class UserController(
     private val userService: UserService,
     private val userRegistrationService: UserRegistrationService,
-    private val temporaryLoginCodeService: TemporaryLoginCodeService
+    private val userSignupService: com.onsae.api.user.service.UserSignupService
 ) {
 
     @PostMapping("/login")
     @Operation(
         summary = "일반 사용자 로그인",
-        description = "사용자 로그인 코드로 로그인합니다."
+        description = "사용자명과 비밀번호로 로그인합니다."
     )
     @ApiResponses(
         value = [
@@ -48,7 +47,7 @@ class UserController(
     )
     @SecurityRequirements
     fun login(@Valid @RequestBody request: UserLoginRequest): ResponseEntity<LoginResponse> {
-        logger.info("User login attempt - LoginCode: ${request.loginCode}")
+        logger.info("User login attempt - Username: ${request.username}")
 
         val response = userService.login(request)
 
@@ -59,7 +58,7 @@ class UserController(
 
     @PostMapping("/register")
     @Operation(
-        summary = "사용자 등록",
+        summary = "사용자 등록 (관리자용)",
         description = "관리자가 일반 사용자를 등록합니다. 관리자 권한이 필요합니다."
     )
     @ApiResponses(
@@ -68,7 +67,7 @@ class UserController(
             ApiResponse(responseCode = "400", description = "잘못된 요청"),
             ApiResponse(responseCode = "401", description = "인증 필요"),
             ApiResponse(responseCode = "403", description = "권한 부족"),
-            ApiResponse(responseCode = "409", description = "이미 등록된 로그인 코드")
+            ApiResponse(responseCode = "409", description = "이미 등록된 사용자명")
         ]
     )
     @SecurityRequirement(name = "bearerAuth")
@@ -78,7 +77,7 @@ class UserController(
     ): ResponseEntity<UserRegisterResponse> {
         val principal = authentication.principal as CustomUserPrincipal
 
-        logger.info("User registration attempt by admin: ${principal.userId}, loginCode: ${request.loginCode}")
+        logger.info("User registration attempt by admin: ${principal.userId}, username: ${request.username}")
 
         val response = userRegistrationService.registerUser(request, principal.userId)
 
@@ -87,38 +86,28 @@ class UserController(
         return ResponseEntity.ok(response)
     }
 
-    @PostMapping("/{userId}/generate-code")
+    @PostMapping("/signup")
     @Operation(
-        summary = "임시 로그인 코드 생성",
-        description = "사용자의 새로운 임시 로그인 코드를 생성합니다. 관리자 권한이 필요합니다."
+        summary = "사용자 회원가입",
+        description = "일반 사용자가 직접 회원가입합니다."
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "코드 생성 성공"),
+            ApiResponse(responseCode = "200", description = "회원가입 성공"),
             ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            ApiResponse(responseCode = "401", description = "인증 필요"),
-            ApiResponse(responseCode = "403", description = "권한 부족"),
-            ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+            ApiResponse(responseCode = "404", description = "기관을 찾을 수 없음"),
+            ApiResponse(responseCode = "409", description = "이미 등록된 사용자명")
         ]
     )
-    @SecurityRequirement(name = "bearerAuth")
-    fun generateTemporaryCode(
-        @PathVariable userId: Long,
-        authentication: Authentication
-    ): ResponseEntity<Map<String, String>> {
-        val principal = authentication.principal as CustomUserPrincipal
+    @SecurityRequirements
+    fun signup(@Valid @RequestBody request: com.onsae.api.user.dto.UserSignupRequest): ResponseEntity<com.onsae.api.user.dto.UserSignupResponse> {
+        logger.info("User signup attempt - username: ${request.username}, institutionId: ${request.institutionId}")
 
-        logger.info("Temporary code generation request by admin: ${principal.userId} for user: $userId")
+        val response = userSignupService.signup(request)
 
-        val temporaryCode = temporaryLoginCodeService.generateTemporaryCode(userId)
+        logger.info("User signup successful: userId=${response.userId}")
 
-        logger.info("Temporary code generated for user: $userId")
-
-        return ResponseEntity.ok(mapOf(
-            "userId" to userId.toString(),
-            "temporaryCode" to temporaryCode,
-            "expiresInMinutes" to "15"
-        ))
+        return ResponseEntity.ok(response)
     }
 
     @GetMapping("/profile")
