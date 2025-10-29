@@ -107,16 +107,6 @@ class UserQuestionService(
             throw InvalidCredentialsException("해당 질문에 대한 접근 권한이 없습니다")
         }
 
-        // 이미 오늘 응답했는지 확인
-        val existingResponse = questionResponseRepository.findByAssignmentIdAndUserId(request.assignmentId, userId)
-        if (existingResponse != null) {
-            val today = LocalDate.now()
-            val responseDate = existingResponse.submittedAt.toLocalDate()
-            if (responseDate == today) {
-                throw InvalidCredentialsException("이미 오늘 응답한 질문입니다")
-            }
-        }
-
         // 응답 저장
         val questionResponse = QuestionResponse().apply {
             this.assignment = assignment
