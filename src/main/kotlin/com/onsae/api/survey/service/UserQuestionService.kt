@@ -11,6 +11,7 @@ import com.onsae.api.user.repository.UserRepository
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger {}
@@ -106,10 +107,14 @@ class UserQuestionService(
             throw InvalidCredentialsException("해당 질문에 대한 접근 권한이 없습니다")
         }
 
-        // 이미 응답했는지 확인
+        // 이미 오늘 응답했는지 확인
         val existingResponse = questionResponseRepository.findByAssignmentIdAndUserId(request.assignmentId, userId)
         if (existingResponse != null) {
-            throw InvalidCredentialsException("이미 응답한 질문입니다")
+            val today = LocalDate.now()
+            val responseDate = existingResponse.submittedAt.toLocalDate()
+            if (responseDate == today) {
+                throw InvalidCredentialsException("이미 오늘 응답한 질문입니다")
+            }
         }
 
         // 응답 저장
