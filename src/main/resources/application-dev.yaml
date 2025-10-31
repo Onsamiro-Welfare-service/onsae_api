@@ -44,3 +44,7 @@ management:
       base-path: /actuator
       exposure:
         include: health,info,metrics,prometheus
+
+app:
+  swagger:
+    server-url: ${SWAGGER_SERVER_URL}

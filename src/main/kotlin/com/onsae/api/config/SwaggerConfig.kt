@@ -15,8 +15,8 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class SwaggerConfig {
 
-    @Value("\${server.port:8080}")
-    private lateinit var serverPort: String
+    @Value("\${app.swagger.server-url}")
+    private lateinit var serverUrl: String
 
     @Bean
     fun openAPI(): OpenAPI {
@@ -42,8 +42,8 @@ class SwaggerConfig {
             .servers(
                 listOf(
                     Server()
-                        .url("http://localhost:$serverPort")
-                        .description("로컬 개발 서버"),
+                        .url(serverUrl)
+                        .description("API 서버"),
                 )
             )
             .components(
