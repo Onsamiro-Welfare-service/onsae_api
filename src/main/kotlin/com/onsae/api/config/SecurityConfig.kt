@@ -51,7 +51,6 @@ class SecurityConfig(
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/test/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                    .requestMatchers("/api/system/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/user/**").hasRole("USER")
                     .anyRequest().authenticated()
             }
