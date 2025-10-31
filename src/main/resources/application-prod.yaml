@@ -49,3 +49,7 @@ management:
   endpoint:
     health:
       show-details: never
+
+app:
+  swagger:
+    server-url: ${SWAGGER_SERVER_URL}
