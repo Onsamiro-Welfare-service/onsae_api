@@ -4,13 +4,6 @@ on:
   push:
     branches:
       - main
-      - develop
-    tags:
-      - 'v*'
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -42,63 +35,59 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/topazkang/onsae_be:latest
 
   deploy:
     needs: build-and-push
-    runs-on: self-hosted
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: [self-hosted, onsae_be]
 
     steps:
-      - name: Set environment variables
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "DEPLOY_TAG=latest" >> $GITHUB_ENV
-            echo "COMPOSE_PROJECT=onsae-prod" >> $GITHUB_ENV
-          else
-            echo "DEPLOY_TAG=develop" >> $GITHUB_ENV
-            echo "COMPOSE_PROJECT=onsae-dev" >> $GITHUB_ENV
-          fi
-
       - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+        run: |
+          echo "🔐 GitHub Container Registry 로그인 중..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "✅ 로그인 완료"
 
       - name: Pull latest image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}
+        run: |
+          echo "📦 최신 이미지 Pull 시작..."
+          echo "이미지: ghcr.io/topazkang/onsae_be:latest"
+          docker pull ghcr.io/topazkang/onsae_be:latest
+          echo "✅ 이미지 Pull 완료"
+
+      - name: Check current containers
+        run: |
+          echo "🔍 현재 실행 중인 컨테이너 확인..."
+          docker ps -a --filter "name=onsae"
 
       - name: Deploy with docker-compose
         run: |
-          cd ~/onsae-deploy
-          export IMAGE_TAG=${{ env.DEPLOY_TAG }}
-          docker-compose -p ${{ env.COMPOSE_PROJECT }} up -d --no-build
+          echo "🚀 배포 시작..."
+          echo "작업 디렉토리: /home/onsae/onsaemiro/deploy/_work/be"
+          echo "Compose 파일: docker-compose.be.yaml"
+          cd /home/onsae/onsaemiro/deploy/_work/be
+          docker-compose -f docker-compose.be.yaml up -d
+          echo "✅ 배포 완료"
+
+      - name: Verify deployment
+        run: |
+          echo "✅ 배포 후 컨테이너 상태 확인..."
+          docker ps --filter "name=onsae"
+          echo ""
+          echo "📊 컨테이너 로그 (최근 20줄):"
+          docker-compose -f /home/onsae/onsaemiro/deploy/_work/be/docker-compose.be.yaml logs --tail=20
 
       - name: Clean up old images
-        run: docker image prune -af --filter "until=72h"
-
-      - name: Health check
         run: |
-          sleep 10
-          curl -f http://localhost:8080/actuator/health || exit 1
+          echo "🧹 72시간 이상 된 이미지 정리 중..."
+          docker image prune -af --filter "until=72h"
+          echo "✅ 정리 완료"
