@@ -45,7 +45,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/topazkang/onsae_be:latest
+          tags: ghcr.io/onsamiro-welfare-service/onsae_be:latest
 
   deploy:
     needs: build-and-push
@@ -61,8 +61,8 @@ jobs:
       - name: Pull latest image
         run: |
           echo "📦 최신 이미지 Pull 시작..."
-          echo "이미지: ghcr.io/topazkang/onsae_be:latest"
-          docker pull ghcr.io/topazkang/onsae_be:latest
+          echo "이미지: ghcr.io/onsamiro-welfare-service/onsae_be:latest"
+          docker pull ghcr.io/onsamiro-welfare-service/onsae_be:latest
           echo "✅ 이미지 Pull 완료"
 
       - name: Check current containers
