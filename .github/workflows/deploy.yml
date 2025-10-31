@@ -63,13 +63,13 @@ jobs:
           echo "🔍 현재 실행 중인 컨테이너 확인..."
           docker ps -a --filter "name=onsae"
 
-      - name: Deploy with docker-compose
+      - name: Deploy with docker compose
         run: |
           echo "🚀 배포 시작 (최신 이미지 Pull 및 컨테이너 재생성)..."
           echo "작업 디렉토리: /home/onsae/onsaemiro/deploy/_work/be"
           echo "Compose 파일: docker-compose.be.yaml"
           cd /home/onsae/onsaemiro/deploy/_work/be
-          docker-compose -f docker-compose.be.yaml up -d --pull always --force-recreate
+          docker compose -f docker-compose.be.yaml up -d --pull always --force-recreate
           echo "✅ 배포 완료"
 
       - name: Verify deployment
@@ -78,7 +78,7 @@ jobs:
           docker ps --filter "name=onsae"
           echo ""
           echo "📊 컨테이너 로그 (최근 20줄):"
-          docker-compose -f /home/onsae/onsaemiro/deploy/_work/be/docker-compose.be.yaml logs --tail=20
+          docker compose -f /home/onsae/onsaemiro/deploy/_work/be/docker-compose.be.yaml logs --tail=20
 
       - name: Clean up old images
         run: |
