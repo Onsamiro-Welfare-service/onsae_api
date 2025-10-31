@@ -58,13 +58,6 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           echo "✅ 로그인 완료"
 
-      - name: Pull latest image
-        run: |
-          echo "📦 최신 이미지 Pull 시작..."
-          echo "이미지: ghcr.io/onsamiro-welfare-service/onsae_be:latest"
-          docker pull ghcr.io/onsamiro-welfare-service/onsae_be:latest
-          echo "✅ 이미지 Pull 완료"
-
       - name: Check current containers
         run: |
           echo "🔍 현재 실행 중인 컨테이너 확인..."
@@ -72,11 +65,11 @@ jobs:
 
       - name: Deploy with docker-compose
         run: |
-          echo "🚀 배포 시작..."
+          echo "🚀 배포 시작 (최신 이미지 Pull 및 컨테이너 재생성)..."
           echo "작업 디렉토리: /home/onsae/onsaemiro/deploy/_work/be"
           echo "Compose 파일: docker-compose.be.yaml"
           cd /home/onsae/onsaemiro/deploy/_work/be
-          docker-compose -f docker-compose.be.yaml up -d
+          docker-compose -f docker-compose.be.yaml up -d --pull always --force-recreate
           echo "✅ 배포 완료"
 
       - name: Verify deployment
