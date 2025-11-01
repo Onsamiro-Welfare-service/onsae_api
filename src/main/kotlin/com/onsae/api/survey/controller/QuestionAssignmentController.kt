@@ -127,7 +127,7 @@ class QuestionAssignmentController(
     @GetMapping("/by-user/{userId}")
     @Operation(
         summary = "사용자별 질문 할당 조회",
-        description = "특정 사용자에게 할당된 질문 목록을 조회합니다."
+        description = "특정 사용자에게 할당된 모든 질문 목록을 조회합니다. 개별 할당과 사용자가 속한 그룹에 할당된 질문을 모두 포함합니다."
     )
     @ApiResponses(
         value = [
