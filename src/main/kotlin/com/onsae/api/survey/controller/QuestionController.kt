@@ -5,6 +5,7 @@ import com.onsae.api.survey.dto.QuestionRequest
 import com.onsae.api.survey.dto.QuestionResponse
 import com.onsae.api.survey.entity.QuestionType
 import com.onsae.api.survey.service.QuestionService
+import com.onsae.api.survey.service.UserQuestionService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -23,7 +24,8 @@ private val logger = KotlinLogging.logger {}
 @RequestMapping("/api/questions")
 @Tag(name = "질문", description = "설문 질문 관리 API")
 class QuestionController(
-    private val questionService: QuestionService
+    private val questionService: QuestionService,
+    private val userQuestionService: UserQuestionService
 ) {
 
     @PostMapping
@@ -223,6 +225,32 @@ class QuestionController(
     fun getQuestionStatistics(authentication: Authentication): ResponseEntity<Map<String, Any>> {
         val principal = authentication.principal as CustomUserPrincipal
         val statistics = questionService.getQuestionStatistics(principal.institutionId!!)
+        return ResponseEntity.ok(statistics)
+    }
+
+    @GetMapping("/statistics/{userId}")
+    @Operation(
+        summary = "사용자별 질문 응답 통계 조회",
+        description = "특정 사용자의 질문 응답 진행 상황 통계를 조회합니다. 관리자 권한이 필요합니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "통계 조회 성공"),
+            ApiResponse(responseCode = "401", description = "인증 필요"),
+            ApiResponse(responseCode = "403", description = "권한 부족"),
+            ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+        ]
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    fun getUserQuestionStatistics(
+        @PathVariable userId: Long,
+        authentication: Authentication
+    ): ResponseEntity<Map<String, Any>> {
+        val principal = authentication.principal as CustomUserPrincipal
+
+        logger.info("User question statistics request by admin: ${principal.userId} for user: $userId")
+
+        val statistics = userQuestionService.getMyQuestionStatistics(userId)
         return ResponseEntity.ok(statistics)
     }
 }

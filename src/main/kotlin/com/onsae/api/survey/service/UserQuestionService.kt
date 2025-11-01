@@ -43,10 +43,15 @@ class UserQuestionService(
 
         val allAssignments = (directAssignments + groupAssignments).distinctBy { it.question?.id!! }
 
-        // 3. 응답 완료 여부 확인
+        // 3. 오늘 날짜 기준으로 응답 완료 여부 확인
+        val today = LocalDate.now()
+        val startOfDay = today.atStartOfDay()
+        val endOfDay = today.plusDays(1).atStartOfDay()
+
         val assignmentIds = allAssignments.map { it.id!! }
-        val completedResponses = questionResponseRepository.findByAssignmentIdIn(assignmentIds)
-            .associateBy { it.assignment?.id!! }
+        val completedResponses = questionResponseRepository.findByAssignmentIdInAndSubmittedAtBetween(
+            assignmentIds, startOfDay, endOfDay
+        ).associateBy { it.assignment?.id!! }
 
         // 4. UserQuestionResponse로 변환
         return allAssignments
