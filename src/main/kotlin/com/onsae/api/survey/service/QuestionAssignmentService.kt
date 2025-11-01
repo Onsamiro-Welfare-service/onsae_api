@@ -10,6 +10,7 @@ import com.onsae.api.survey.entity.QuestionAssignment
 import com.onsae.api.survey.repository.CategoryRepository
 import com.onsae.api.survey.repository.QuestionAssignmentRepository
 import com.onsae.api.survey.repository.QuestionRepository
+import com.onsae.api.user.repository.UserGroupMemberRepository
 import com.onsae.api.user.repository.UserGroupRepository
 import com.onsae.api.user.repository.UserRepository
 import mu.KotlinLogging
@@ -26,6 +27,7 @@ class QuestionAssignmentService(
     private val categoryRepository: CategoryRepository,
     private val userRepository: UserRepository,
     private val userGroupRepository: UserGroupRepository,
+    private val userGroupMemberRepository: UserGroupMemberRepository,
     private val institutionRepository: InstitutionRepository,
     private val adminRepository: AdminRepository
 ) {
@@ -185,8 +187,21 @@ class QuestionAssignmentService(
             throw InvalidCredentialsException("해당 사용자에 대한 접근 권한이 없습니다")
         }
 
-        val assignments = questionAssignmentRepository.findByUserIdWithDetails(userId)
-        return assignments.map { toQuestionAssignmentResponse(it) }
+        // 사용자가 속한 그룹 ID들 조회
+        val userGroupIds = userGroupMemberRepository.findByUserId(userId)
+            .map { it.group.id!! }
+
+        // 개별 할당 + 그룹 할당 질문들 조회
+        val directAssignments = questionAssignmentRepository.findByUserIdWithDetails(userId)
+        val groupAssignments = userGroupIds.flatMap { groupId ->
+            questionAssignmentRepository.findByGroupIdWithDetails(groupId)
+        }
+
+        // 중복 제거 후 반환 (같은 질문이 개별+그룹으로 중복 할당될 수 있음)
+        val allAssignments = (directAssignments + groupAssignments)
+            .distinctBy { it.id!! }
+
+        return allAssignments.map { toQuestionAssignmentResponse(it) }
     }
 
     fun getAssignmentsByGroup(groupId: Long, institutionId: Long): List<QuestionAssignmentResponse> {
