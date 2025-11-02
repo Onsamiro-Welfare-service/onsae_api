@@ -1,14 +1,18 @@
 package com.onsae.api.config
 
 import com.onsae.api.auth.security.JwtAuthenticationFilter
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.core.userdetails.User
+import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
@@ -19,16 +23,43 @@ class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
 
+    @Value("\${app.swagger.security.enabled:false}")
+    private var swaggerSecurityEnabled: Boolean = false
+
+    @Value("\${app.swagger.security.username:admin}")
+    private lateinit var swaggerUsername: String
+
+    @Value("\${app.swagger.security.password:admin}")
+    private lateinit var swaggerPassword: String
+
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     @Bean
+    fun swaggerUserDetailsService(): UserDetailsService {
+        val user = User.builder()
+            .username(swaggerUsername)
+            .password(passwordEncoder().encode(swaggerPassword))
+            .roles("SWAGGER_USER")
+            .build()
+        return InMemoryUserDetailsManager(user)
+    }
+
+    @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
-        return http
+        http
             .csrf { it.disable() }
             .formLogin { it.disable() }
-            .httpBasic { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+
+        // Swagger 보안 활성화 시 HTTP Basic Auth 사용
+        if (swaggerSecurityEnabled) {
+            http.httpBasic { }
+        } else {
+            http.httpBasic { it.disable() }
+        }
+
+        return http
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/actuator/**").permitAll()
@@ -52,7 +83,16 @@ class SecurityConfig(
                     .requestMatchers("/api/admin/approve/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/test/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                    // Swagger 경로는 환경에 따라 보호 여부 결정
+                    .apply {
+                        if (swaggerSecurityEnabled) {
+                            this.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
+                                .hasRole("SWAGGER_USER")
+                        } else {
+                            this.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
+                                .permitAll()
+                        }
+                    }
                     .requestMatchers("/api/user/**").hasRole("USER")
                     .anyRequest().authenticated()
             }
