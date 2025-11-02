@@ -48,3 +48,7 @@ management:
 app:
   swagger:
     server-url: ${SWAGGER_SERVER_URL}
+    security:
+      enabled: true
+      username: ${SWAGGER_USERNAME:admin}
+      password: ${SWAGGER_PASSWORD:admin123!}

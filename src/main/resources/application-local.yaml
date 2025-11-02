@@ -39,3 +39,5 @@ app:
     allowed-origins: http://localhost:3000,http://localhost:8081
   swagger:
     server-url: http://localhost:8080
+    security:
+      enabled: false
