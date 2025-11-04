@@ -20,6 +20,13 @@ interface QuestionResponseRepository : JpaRepository<QuestionResponse, Long> {
         endDate: LocalDateTime
     ): List<QuestionResponse>
 
+    fun findByAssignmentIdInAndUserIdAndSubmittedAtBetween(
+        assignmentIds: List<Long>,
+        userId: Long,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime
+    ): List<QuestionResponse>
+
     @Query("SELECT qr FROM QuestionResponse qr LEFT JOIN FETCH qr.assignment LEFT JOIN FETCH qr.user WHERE qr.assignment.id = :assignmentId")
     fun findByAssignmentIdWithDetails(assignmentId: Long): List<QuestionResponse>
 

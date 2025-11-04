@@ -49,8 +49,8 @@ class UserQuestionService(
         val endOfDay = today.plusDays(1).atStartOfDay()
 
         val assignmentIds = allAssignments.map { it.id!! }
-        val completedResponses = questionResponseRepository.findByAssignmentIdInAndSubmittedAtBetween(
-            assignmentIds, startOfDay, endOfDay
+        val completedResponses = questionResponseRepository.findByAssignmentIdInAndUserIdAndSubmittedAtBetween(
+            assignmentIds, userId, startOfDay, endOfDay
         ).associateBy { it.assignment?.id!! }
 
         // 4. UserQuestionResponse로 변환
