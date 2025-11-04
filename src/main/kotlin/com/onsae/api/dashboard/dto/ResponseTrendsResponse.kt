@@ -20,8 +20,8 @@ data class DailyResponseData(
     @Schema(description = "날짜")
     val date: LocalDate,
 
-    @Schema(description = "총 응답 수")
-    val totalResponses: Int,
+    @Schema(description = "할당된 질문 수")
+    val assignedQuestions: Int,
 
     @Schema(description = "완료된 응답 수")
     val completedResponses: Int,
@@ -38,8 +38,11 @@ data class TrendSummary(
     @Schema(description = "평균 응답률(%)")
     val avgResponseRate: Double,
 
-    @Schema(description = "총 응답 수")
-    val totalResponses: Int,
+    @Schema(description = "총 할당된 질문 수")
+    val totalAssignedQuestions: Int,
+
+    @Schema(description = "총 완료된 응답 수")
+    val totalCompletedResponses: Int,
 
     @Schema(description = "추세", example = "up")
     val trend: String

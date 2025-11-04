@@ -31,4 +31,17 @@ interface UserGroupMemberRepository : JpaRepository<UserGroupMember, Long> {
 
     @Query("SELECT COUNT(m) FROM UserGroupMember m WHERE m.group.id = :groupId AND m.isActive = true")
     fun countActiveByGroupId(@Param("groupId") groupId: Long): Int
+
+    @Query("""
+        SELECT m.user.id as userId, COUNT(m.group.id) as groupCount
+        FROM UserGroupMember m
+        WHERE m.group.institution.id = :institutionId AND m.isActive = true
+        GROUP BY m.user.id
+    """)
+    fun countGroupsByUserInInstitution(@Param("institutionId") institutionId: Long): List<UserGroupCountProjection>
+}
+
+interface UserGroupCountProjection {
+    val userId: Long
+    val groupCount: Long
 }
