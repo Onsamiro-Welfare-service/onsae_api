@@ -204,14 +204,25 @@ class DashboardService(
             )
         }
 
+        // 사용자별 그룹 소속 현황 계산
         val totalMembers = userRepository.countByInstitutionId(institutionId)
-        val groupedMembers = userGroupMemberRepository.countByInstitutionId(institutionId)
-        val ungroupedMembers = totalMembers - groupedMembers
+        val userGroupCounts = userGroupMemberRepository.countGroupsByUserInInstitution(institutionId)
+
+        val singleGroupUsers = userGroupCounts.count { it.groupCount == 1L }
+        val multipleGroupUsers = userGroupCounts.count { it.groupCount > 1L }
+        val groupedUsersCount = userGroupCounts.size
+        val ungroupedUsers = (totalMembers - groupedUsersCount).toInt()
+
+        val userDistribution = UserDistribution(
+            singleGroupUsers = singleGroupUsers,
+            multipleGroupUsers = multipleGroupUsers,
+            ungroupedUsers = ungroupedUsers
+        )
 
         return UserGroupsResponse(
             groups = groupInfos,
             totalMembers = totalMembers,
-            ungroupedMembers = ungroupedMembers
+            userDistribution = userDistribution
         )
     }
 

@@ -10,8 +10,20 @@ data class UserGroupsResponse(
     @Schema(description = "총 멤버 수")
     val totalMembers: Long,
 
-    @Schema(description = "그룹 미소속 멤버 수")
-    val ungroupedMembers: Long
+    @Schema(description = "사용자 분포 (원그래프용)")
+    val userDistribution: UserDistribution
+)
+
+@Schema(description = "사용자 분포")
+data class UserDistribution(
+    @Schema(description = "단일 그룹 소속 사용자 수")
+    val singleGroupUsers: Int,
+
+    @Schema(description = "복수 그룹 소속 사용자 수")
+    val multipleGroupUsers: Int,
+
+    @Schema(description = "그룹 미소속 사용자 수")
+    val ungroupedUsers: Int
 )
 
 @Schema(description = "그룹 정보")
@@ -22,7 +34,7 @@ data class GroupInfo(
     @Schema(description = "그룹명")
     val groupName: String,
 
-    @Schema(description = "멤버 수")
+    @Schema(description = "멤버 수 (중복 포함)")
     val memberCount: Int,
 
     @Schema(description = "활성 멤버 수")
