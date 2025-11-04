@@ -16,14 +16,26 @@ data class UserGroupsResponse(
 
 @Schema(description = "사용자 분포")
 data class UserDistribution(
-    @Schema(description = "단일 그룹 소속 사용자 수")
-    val singleGroupUsers: Int,
+    @Schema(description = "그룹 조합별 사용자 분포")
+    val categories: List<UserCategory>
+)
 
-    @Schema(description = "복수 그룹 소속 사용자 수")
-    val multipleGroupUsers: Int,
+@Schema(description = "사용자 카테고리 (그룹 조합)")
+data class UserCategory(
+    @Schema(description = "속한 그룹 ID 목록 (빈 배열 = 미소속)")
+    val groupIds: List<Long>,
 
-    @Schema(description = "그룹 미소속 사용자 수")
-    val ungroupedUsers: Int
+    @Schema(description = "속한 그룹 이름 목록")
+    val groupNames: List<String>,
+
+    @Schema(description = "이 조합에 속한 사용자 수")
+    val userCount: Int,
+
+    @Schema(description = "표시 라벨", example = "A그룹+B그룹")
+    val label: String,
+
+    @Schema(description = "차트 색상", example = "#FF6B6B")
+    val color: String
 )
 
 @Schema(description = "그룹 정보")

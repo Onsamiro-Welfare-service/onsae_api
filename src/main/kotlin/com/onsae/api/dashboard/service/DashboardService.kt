@@ -206,24 +206,89 @@ class DashboardService(
 
         // 사용자별 그룹 소속 현황 계산
         val totalMembers = userRepository.countByInstitutionId(institutionId)
-        val userGroupCounts = userGroupMemberRepository.countGroupsByUserInInstitution(institutionId)
+        val allUsers = userRepository.findByInstitutionId(institutionId)
+        val userGroupMembers = userGroupMemberRepository.findByInstitutionId(institutionId)
 
-        val singleGroupUsers = userGroupCounts.count { it.groupCount == 1L }
-        val multipleGroupUsers = userGroupCounts.count { it.groupCount > 1L }
-        val groupedUsersCount = userGroupCounts.size
-        val ungroupedUsers = (totalMembers - groupedUsersCount).toInt()
+        // 그룹 ID -> 그룹 이름 매핑
+        val groupIdToName = groups.associate { it.id!! to it.name }
+        val groupIdToColor = groups.mapIndexed { index, group ->
+            group.id!! to colors[index % colors.size]
+        }.toMap()
 
-        val userDistribution = UserDistribution(
-            singleGroupUsers = singleGroupUsers,
-            multipleGroupUsers = multipleGroupUsers,
-            ungroupedUsers = ungroupedUsers
-        )
+        // 사용자별 그룹 조합 계산
+        val userToGroups = userGroupMembers
+            .filter { it.isActive }
+            .groupBy { it.user.id }
+            .mapValues { (_, members) ->
+                members.map { it.group.id!! }.sorted()
+            }
+
+        // 그룹 조합별로 사용자 수 집계
+        val groupCombinationCounts = mutableMapOf<List<Long>, Int>()
+
+        allUsers.forEach { user ->
+            val userGroups = userToGroups[user.id] ?: emptyList()
+            groupCombinationCounts[userGroups] = groupCombinationCounts.getOrDefault(userGroups, 0) + 1
+        }
+
+        // UserCategory 생성
+        val categories = groupCombinationCounts.map { (groupIds, count) ->
+            val groupNames = groupIds.mapNotNull { groupIdToName[it] }
+            val label = if (groupIds.isEmpty()) {
+                "그룹 미소속"
+            } else {
+                groupNames.joinToString("+")
+            }
+
+            // 색상 결정: 단일 그룹이면 해당 그룹 색, 복수면 혼합 색상
+            val color = when {
+                groupIds.isEmpty() -> "#E0E0E0"
+                groupIds.size == 1 -> groupIdToColor[groupIds[0]] ?: "#CCCCCC"
+                else -> generateMixedColor(groupIds.mapNotNull { groupIdToColor[it] })
+            }
+
+            UserCategory(
+                groupIds = groupIds,
+                groupNames = groupNames,
+                userCount = count,
+                label = label,
+                color = color
+            )
+        }.sortedByDescending { it.userCount }
+
+        val userDistribution = UserDistribution(categories = categories)
 
         return UserGroupsResponse(
             groups = groupInfos,
             totalMembers = totalMembers,
             userDistribution = userDistribution
         )
+    }
+
+    private fun generateMixedColor(colors: List<String>): String {
+        // 복수 그룹의 경우 혼합 색상 생성 (간단히 첫 번째 색상에 투명도 적용)
+        if (colors.isEmpty()) return "#CCCCCC"
+
+        // 여러 색상을 평균내어 혼합
+        val rgbValues = colors.map { hexToRgb(it) }
+        val avgR = rgbValues.map { it[0] }.average().toInt()
+        val avgG = rgbValues.map { it[1] }.average().toInt()
+        val avgB = rgbValues.map { it[2] }.average().toInt()
+
+        return rgbToHex(avgR, avgG, avgB)
+    }
+
+    private fun hexToRgb(hex: String): IntArray {
+        val cleanHex = hex.removePrefix("#")
+        return intArrayOf(
+            cleanHex.substring(0, 2).toInt(16),
+            cleanHex.substring(2, 4).toInt(16),
+            cleanHex.substring(4, 6).toInt(16)
+        )
+    }
+
+    private fun rgbToHex(r: Int, g: Int, b: Int): String {
+        return "#%02X%02X%02X".format(r, g, b)
     }
 
     fun getRecentActivities(institutionId: Long, limit: Int, type: String?): RecentActivitiesResponse {
