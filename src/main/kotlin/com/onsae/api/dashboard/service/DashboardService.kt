@@ -113,7 +113,8 @@ class DashboardService(
         val startDate = today.minusDays(days.toLong() - 1)
 
         val data = mutableListOf<DailyResponseData>()
-        var totalResponses = 0
+        var totalAssignedQuestions = 0
+        var totalCompletedResponses = 0
         var totalRate = 0.0
 
         for (i in 0 until days) {
@@ -141,14 +142,15 @@ class DashboardService(
             data.add(
                 DailyResponseData(
                     date = date,
-                    totalResponses = responses.size,
+                    assignedQuestions = assignmentsCount,
                     completedResponses = completedResponses,
                     responseRate = responseRate,
                     byCategory = byCategory
                 )
             )
 
-            totalResponses += responses.size
+            totalAssignedQuestions += assignmentsCount
+            totalCompletedResponses += completedResponses
             totalRate += responseRate
         }
 
@@ -166,7 +168,8 @@ class DashboardService(
             data = data,
             summary = TrendSummary(
                 avgResponseRate = avgResponseRate,
-                totalResponses = totalResponses,
+                totalAssignedQuestions = totalAssignedQuestions,
+                totalCompletedResponses = totalCompletedResponses,
                 trend = trend
             )
         )
