@@ -1,5 +1,6 @@
 package com.onsae.api.file.controller
 
+import com.onsae.api.auth.exception.InvalidCredentialsException
 import com.onsae.api.auth.security.CustomUserPrincipal
 import com.onsae.api.file.dto.AdminResponseRequest
 import com.onsae.api.file.dto.UploadListResponse
@@ -71,7 +72,16 @@ class UploadController(
         @RequestParam(value = "files", required = false) files: List<MultipartFile>?,
         authentication: Authentication
     ): ResponseEntity<*> {
-        val principal = authentication.principal as CustomUserPrincipal
+        // 안전한 캐스팅: principal이 CustomUserPrincipal 타입이 아닌 경우 null 반환
+        val principal = authentication.principal as? CustomUserPrincipal
+            ?: run {
+                logger.error("Invalid principal type: ${authentication.principal?.javaClass?.name}")
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(mapOf(
+                        "message" to "인증 정보가 올바르지 않습니다",
+                        "code" to "INVALID_AUTHENTICATION"
+                    ))
+            }
 
         // 빈 파일 필터링 (MultipartFile이 비어있거나 null인 경우 제거)
         val validFiles = files?.filter { !it.isEmpty } ?: emptyList()
@@ -126,8 +136,17 @@ class UploadController(
         ]
     )
     @SecurityRequirement(name = "bearerAuth")
-    fun getMyUploads(authentication: Authentication): ResponseEntity<List<UploadListResponse>> {
-        val principal = authentication.principal as CustomUserPrincipal
+    fun getMyUploads(authentication: Authentication): ResponseEntity<*> {
+        // 안전한 캐스팅: principal이 CustomUserPrincipal 타입이 아닌 경우 null 반환
+        val principal = authentication.principal as? CustomUserPrincipal
+            ?: run {
+                logger.error("Invalid principal type: ${authentication.principal?.javaClass?.name}")
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(mapOf(
+                        "message" to "인증 정보가 올바르지 않습니다",
+                        "code" to "INVALID_AUTHENTICATION"
+                    ))
+            }
 
         val uploads = uploadService.getUserUploads(principal.userId)
 
@@ -158,8 +177,17 @@ class UploadController(
     fun getUploadById(
         @PathVariable uploadId: Long,
         authentication: Authentication
-    ): ResponseEntity<UploadResponse> {
-        val principal = authentication.principal as CustomUserPrincipal
+    ): ResponseEntity<*> {
+        // 안전한 캐스팅: principal이 CustomUserPrincipal 타입이 아닌 경우 null 반환
+        val principal = authentication.principal as? CustomUserPrincipal
+            ?: run {
+                logger.error("Invalid principal type: ${authentication.principal?.javaClass?.name}")
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(mapOf(
+                        "message" to "인증 정보가 올바르지 않습니다",
+                        "code" to "INVALID_AUTHENTICATION"
+                    ))
+            }
 
         val upload = uploadService.getUploadById(uploadId, principal.userId)
 
