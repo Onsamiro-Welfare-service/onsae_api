@@ -89,11 +89,16 @@ class FileStorageService(
         // 5. 파일 저장
         val targetPath = targetDirectory.resolve(fileName)
         try {
-            Files.copy(file.inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING)
+            // use 블록을 사용하여 스트림이 항상 닫히도록 보장
+            // Kotlin의 use 함수는 finally 블록에서 자동으로 close()를 호출합니다
+            file.inputStream.use { inputStream ->
+                Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING)
+            }
             logger.info("File saved successfully: $targetPath")
         } catch (e: Exception) {
             logger.error(e) { "Failed to save file: $originalFilename" }
-            throw FileStorageException("파일 저장에 실패했습니다: ${e.message}")
+            // 원래 예외를 cause로 포함하여 예외 체인 보존
+            throw FileStorageException("파일 저장에 실패했습니다: ${e.message}", cause = e)
         }
 
         return FileInfo(
@@ -196,7 +201,8 @@ class FileStorageService(
             }
         } catch (e: Exception) {
             logger.error(e) { "Failed to delete file: $filePath" }
-            throw FileStorageException("파일 삭제에 실패했습니다: ${e.message}")
+            // 원래 예외를 cause로 포함하여 예외 체인 보존
+            throw FileStorageException("파일 삭제에 실패했습니다: ${e.message}", cause = e)
         }
     }
 
