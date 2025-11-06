@@ -45,21 +45,24 @@ class UploadService(
     private val logger = KotlinLogging.logger {}
 
     /**
-     * 파일을 업로드합니다.
+     * 파일 또는 텍스트를 업로드합니다.
+     * 
+     * content와 files 중 하나 이상은 필수입니다.
      * 
      * @param request 업로드 요청 정보 (제목, 내용)
-     * @param files 업로드할 파일들
+     * @param files 업로드할 파일들 (선택사항)
      * @param userId 업로드하는 사용자 ID
      * @param institutionId 기관 ID
      * @return 업로드 정보 응답
      */
     fun uploadFiles(
         request: UploadRequest,
-        files: List<MultipartFile>,
+        files: List<MultipartFile>?,
         userId: Long,
         institutionId: Long
     ): UploadResponse {
-        logger.info("Upload request from user: $userId, institution: $institutionId, files: ${files.size}")
+        val fileList = files?.filter { !it.isEmpty } ?: emptyList()
+        logger.info("Upload request from user: $userId, institution: $institutionId, files: ${fileList.size}, hasContent: ${!request.content.isNullOrBlank()}")
 
         // 1. 기관 확인
         val institution = institutionRepository.findById(institutionId)
@@ -69,9 +72,12 @@ class UploadService(
         val user = userRepository.findById(userId)
             .orElseThrow { InvalidCredentialsException("존재하지 않는 사용자입니다") }
 
-        // 3. 파일 검증
-        if (files.isEmpty()) {
-            throw IllegalArgumentException("업로드할 파일이 없습니다")
+        // 3. content와 files 중 하나 이상은 필수
+        val hasContent = !request.content.isNullOrBlank()
+        val hasFiles = fileList.isNotEmpty()
+        
+        if (!hasContent && !hasFiles) {
+            throw IllegalArgumentException("content 또는 files 중 하나 이상은 필수입니다")
         }
 
         // 4. Upload 엔티티 생성
@@ -83,29 +89,35 @@ class UploadService(
             this.adminRead = false
         }
 
-        // 5. 파일 저장 및 UploadFile 엔티티 생성
-        val uploadFiles = files.mapIndexed { index, file ->
-            // 파일 타입 자동 감지 (간단한 방식 - 확장자 기반)
-            val fileType = detectFileType(file.originalFilename ?: "")
+        // 5. 파일이 있는 경우에만 파일 저장 및 UploadFile 엔티티 생성
+        val uploadFiles = if (hasFiles) {
+            fileList.mapIndexed { index, file ->
+                // 파일 타입 자동 감지 (간단한 방식 - 확장자 기반)
+                val fileType = detectFileType(file.originalFilename ?: "")
 
-            // 파일 저장
-            val fileInfo = fileStorageService.saveFile(file, fileType)
+                // 파일 저장
+                val fileInfo = fileStorageService.saveFile(file, fileType)
 
-            // UploadFile 엔티티 생성
-            UploadFile().apply {
-                this.upload = upload
-                this.fileType = fileType
-                this.fileName = fileInfo.fileName
-                this.originalName = fileInfo.originalName
-                this.filePath = fileInfo.filePath
-                this.fileSize = fileInfo.fileSize
-                this.mimeType = fileInfo.mimeType
-                this.uploadOrder = index + 1
+                // UploadFile 엔티티 생성
+                UploadFile().apply {
+                    this.upload = upload
+                    this.fileType = fileType
+                    this.fileName = fileInfo.fileName
+                    this.originalName = fileInfo.originalName
+                    this.filePath = fileInfo.filePath
+                    this.fileSize = fileInfo.fileSize
+                    this.mimeType = fileInfo.mimeType
+                    this.uploadOrder = index + 1
+                }
             }
+        } else {
+            emptyList()
         }
 
         // 6. Upload와 UploadFile 저장 (Cascade로 자동 저장됨)
-        upload.files.addAll(uploadFiles)
+        if (uploadFiles.isNotEmpty()) {
+            upload.files.addAll(uploadFiles)
+        }
         val savedUpload = uploadRepository.save(upload)
 
         logger.info("Upload created successfully: ${savedUpload.id}")

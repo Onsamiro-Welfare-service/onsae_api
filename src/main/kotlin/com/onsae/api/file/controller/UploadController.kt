@@ -40,11 +40,11 @@ class UploadController(
 ) {
 
     /**
-     * 파일을 업로드합니다.
+     * 파일 또는 텍스트를 업로드합니다.
      * 
      * @param title 업로드 제목 (선택사항)
-     * @param content 업로드 내용 (선택사항)
-     * @param files 업로드할 파일들 (MultipartFile)
+     * @param content 업로드 내용 (선택사항, files와 함께 사용 가능)
+     * @param files 업로드할 파일들 (선택사항, content와 함께 사용 가능)
      * @param authentication 인증 정보 (Spring Security에서 자동 주입)
      * @return 업로드 정보 응답
      */
@@ -53,13 +53,13 @@ class UploadController(
         produces = [MediaType.APPLICATION_JSON_VALUE]
     )
     @Operation(
-        summary = "파일 업로드",
-        description = "사용자가 파일을 업로드합니다. 여러 파일을 동시에 업로드할 수 있습니다."
+        summary = "파일 또는 텍스트 업로드",
+        description = "사용자가 파일 또는 텍스트를 업로드합니다. content와 files 중 하나 이상은 필수입니다."
     )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "201", description = "업로드 성공"),
-            ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 없음, 파일 타입 오류 등)"),
+            ApiResponse(responseCode = "400", description = "잘못된 요청 (content와 files 모두 없음, 파일 타입 오류 등)"),
             ApiResponse(responseCode = "401", description = "인증 필요"),
             ApiResponse(responseCode = "413", description = "파일 크기 초과")
         ]
@@ -68,12 +68,15 @@ class UploadController(
     fun uploadFiles(
         @RequestParam(value = "title", required = false) title: String?,
         @RequestParam(value = "content", required = false) content: String?,
-        @RequestParam("files") files: List<MultipartFile>,
+        @RequestParam(value = "files", required = false) files: List<MultipartFile>?,
         authentication: Authentication
     ): ResponseEntity<UploadResponse> {
         val principal = authentication.principal as CustomUserPrincipal
 
-        logger.info("File upload request from user: ${principal.userId}, files: ${files.size}")
+        // 빈 파일 필터링 (MultipartFile이 비어있거나 null인 경우 제거)
+        val validFiles = files?.filter { !it.isEmpty } ?: emptyList()
+        
+        logger.info("Upload request from user: ${principal.userId}, files: ${validFiles.size}, hasContent: ${!content.isNullOrBlank()}")
 
         // UploadRequest 객체 생성
         val request = UploadRequest(
@@ -84,7 +87,7 @@ class UploadController(
         // 업로드 서비스 호출
         val response = uploadService.uploadFiles(
             request = request,
-            files = files,
+            files = if (validFiles.isEmpty()) null else validFiles,
             userId = principal.userId,
             institutionId = principal.institutionId!!
         )
