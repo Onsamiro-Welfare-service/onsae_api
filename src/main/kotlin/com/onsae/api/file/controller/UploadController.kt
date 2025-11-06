@@ -70,11 +70,22 @@ class UploadController(
         @RequestParam(value = "content", required = false) content: String?,
         @RequestParam(value = "files", required = false) files: List<MultipartFile>?,
         authentication: Authentication
-    ): ResponseEntity<UploadResponse> {
+    ): ResponseEntity<*> {
         val principal = authentication.principal as CustomUserPrincipal
 
         // 빈 파일 필터링 (MultipartFile이 비어있거나 null인 경우 제거)
         val validFiles = files?.filter { !it.isEmpty } ?: emptyList()
+        
+        // API 규칙 검증: content와 files 중 하나 이상은 필수
+        // 불필요한 처리를 방지하기 위해 서비스 호출 전에 검증
+        if (content.isNullOrBlank() && validFiles.isEmpty()) {
+            logger.warn("Upload request rejected: both content and files are empty, userId: ${principal.userId}")
+            return ResponseEntity.badRequest()
+                .body(mapOf(
+                    "message" to "content 또는 files 중 하나 이상은 필수입니다",
+                    "code" to "VALIDATION_FAILED"
+                ))
+        }
         
         logger.info("Upload request from user: ${principal.userId}, files: ${validFiles.size}, hasContent: ${!content.isNullOrBlank()}")
 
