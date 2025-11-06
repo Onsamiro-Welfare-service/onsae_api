@@ -26,6 +26,14 @@ interface UploadFileRepository : JpaRepository<UploadFile, Long> {
     fun findByUploadIdOrderByUploadOrder(uploadId: Long): List<UploadFile>
     
     /**
+     * 여러 업로드에 속한 모든 파일을 배치로 조회합니다.
+     * N+1 쿼리 문제를 방지하기 위해 사용됩니다.
+     * @param uploadIds 업로드 ID 목록
+     * @return 업로드 파일 목록 (업로드 ID와 순서로 정렬됨)
+     */
+    fun findByUploadIdInOrderByUploadOrder(uploadIds: List<Long>): List<UploadFile>
+    
+    /**
      * 특정 업로드(Upload)에 속한 파일 개수 조회
      * @param uploadId 업로드 ID
      * @return 파일 개수

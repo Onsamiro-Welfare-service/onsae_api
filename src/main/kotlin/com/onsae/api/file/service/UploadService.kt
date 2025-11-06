@@ -134,7 +134,20 @@ class UploadService(
     @Transactional(readOnly = true)
     fun getUserUploads(userId: Long): List<UploadListResponse> {
         val uploads = uploadRepository.findByUserId(userId)
-        return uploads.map { toUploadListResponse(it) }
+        
+        // N+1 쿼리 문제 방지: 모든 업로드의 파일을 한 번에 배치 조회
+        val uploadIds = uploads.mapNotNull { it.id }
+        val filesByUploadId = if (uploadIds.isNotEmpty()) {
+            uploadFileRepository.findByUploadIdInOrderByUploadOrder(uploadIds)
+                .groupBy { it.upload.id!! }
+        } else {
+            emptyMap()
+        }
+        
+        return uploads.map { upload ->
+            val files = filesByUploadId[upload.id] ?: emptyList()
+            toUploadListResponse(upload, files)
+        }
     }
 
     /**
@@ -166,7 +179,20 @@ class UploadService(
     @Transactional(readOnly = true)
     fun getAllUploadsByInstitution(institutionId: Long): List<UploadListResponse> {
         val uploads = uploadRepository.findByInstitutionId(institutionId)
-        return uploads.map { toUploadListResponse(it) }
+        
+        // N+1 쿼리 문제 방지: 모든 업로드의 파일을 한 번에 배치 조회
+        val uploadIds = uploads.mapNotNull { it.id }
+        val filesByUploadId = if (uploadIds.isNotEmpty()) {
+            uploadFileRepository.findByUploadIdInOrderByUploadOrder(uploadIds)
+                .groupBy { it.upload.id!! }
+        } else {
+            emptyMap()
+        }
+        
+        return uploads.map { upload ->
+            val files = filesByUploadId[upload.id] ?: emptyList()
+            toUploadListResponse(upload, files)
+        }
     }
 
     /**
@@ -283,12 +309,19 @@ class UploadService(
      * Upload 엔티티를 UploadListResponse DTO로 변환합니다.
      * 
      * @param upload Upload 엔티티
+     * @param files 미리 로드된 파일 목록 (N+1 쿼리 방지를 위해 전달)
      * @return UploadListResponse DTO
      */
-    private fun toUploadListResponse(upload: Upload): UploadListResponse {
-        val files = uploadFileRepository.findByUploadIdOrderByUploadOrder(upload.id!!)
-        val fileCount = files.size
-        val firstFileType = files.firstOrNull()?.fileType
+    private fun toUploadListResponse(upload: Upload, files: List<UploadFile> = emptyList()): UploadListResponse {
+        // 파일이 전달되지 않은 경우에만 개별 조회 (단일 업로드 조회 시)
+        val uploadFiles = if (files.isEmpty() && upload.id != null) {
+            uploadFileRepository.findByUploadIdOrderByUploadOrder(upload.id!!)
+        } else {
+            files
+        }
+        
+        val fileCount = uploadFiles.size
+        val firstFileType = uploadFiles.firstOrNull()?.fileType
 
         // 내용 미리보기 (최대 100자)
         val content = upload.content
