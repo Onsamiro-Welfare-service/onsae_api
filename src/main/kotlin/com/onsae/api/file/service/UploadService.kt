@@ -174,14 +174,41 @@ class UploadService(
      * 기관의 모든 업로드 목록을 조회합니다 (관리자용).
      * 
      * @param institutionId 기관 ID
+     * @param limit 조회할 최대 개수 (null이면 전체 조회)
+     * @param offset 건너뛸 개수 (null이면 0부터 시작)
      * @return 업로드 목록
      */
     @Transactional(readOnly = true)
-    fun getAllUploadsByInstitution(institutionId: Long): List<UploadListResponse> {
+    fun getAllUploadsByInstitution(
+        institutionId: Long,
+        limit: Int? = null,
+        offset: Int? = null
+    ): List<UploadListResponse> {
         val uploads = uploadRepository.findByInstitutionId(institutionId)
         
+        // 페이징 처리: limit과 offset이 있으면 적용, 없으면 전체 반환
+        val paginatedUploads = when {
+            offset != null && limit != null -> {
+                // offset과 limit 모두 있는 경우
+                uploads.drop(offset).take(limit)
+            }
+            offset != null -> {
+                // offset만 있는 경우 (limit 없으면 끝까지)
+                uploads.drop(offset)
+            }
+            limit != null -> {
+                // limit만 있는 경우 (offset 없으면 처음부터)
+                uploads.take(limit)
+            }
+            else -> {
+                // 둘 다 없는 경우 전체 반환
+                uploads
+            }
+        }
+        
         // N+1 쿼리 문제 방지: 모든 업로드의 파일을 한 번에 배치 조회
-        val uploadIds = uploads.mapNotNull { it.id }
+        // 페이징된 업로드의 ID만 사용하여 파일 조회
+        val uploadIds = paginatedUploads.mapNotNull { it.id }
         val filesByUploadId = if (uploadIds.isNotEmpty()) {
             uploadFileRepository.findByUploadIdInOrderByUploadOrder(uploadIds)
                 .groupBy { it.upload.id!! }
@@ -189,7 +216,7 @@ class UploadService(
             emptyMap()
         }
         
-        return uploads.map { upload ->
+        return paginatedUploads.map { upload ->
             val files = filesByUploadId[upload.id] ?: emptyList()
             toUploadListResponse(upload, files)
         }

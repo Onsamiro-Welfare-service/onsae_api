@@ -38,13 +38,15 @@ class AdminUploadController(
     /**
      * 기관의 모든 업로드 목록을 조회합니다.
      * 
+     * @param limit 조회할 최대 개수 (선택사항, 없으면 전체 조회)
+     * @param offset 건너뛸 개수 (선택사항, 없으면 0부터 시작)
      * @param authentication 인증 정보
      * @return 업로드 목록
      */
     @GetMapping
     @Operation(
         summary = "업로드 목록 조회 (관리자)",
-        description = "소속 기관의 모든 업로드 목록을 조회합니다. 관리자 권한이 필요합니다."
+        description = "소속 기관의 모든 업로드 목록을 조회합니다. limit과 offset을 사용하여 페이징이 가능합니다. limit과 offset이 없으면 전체 목록을 반환합니다. 관리자 권한이 필요합니다."
     )
     @ApiResponses(
         value = [
@@ -54,12 +56,26 @@ class AdminUploadController(
         ]
     )
     @SecurityRequirement(name = "bearerAuth")
-    fun getAllUploads(authentication: Authentication): ResponseEntity<List<UploadListResponse>> {
-        val principal = authentication.principal as CustomUserPrincipal
+    fun getAllUploads(
+        @RequestParam(value = "limit", required = false) limit: Int?,
+        @RequestParam(value = "offset", required = false) offset: Int?,
+        authentication: Authentication
+    ): ResponseEntity<List<UploadListResponse>> {
+        // 안전한 캐스팅: principal이 CustomUserPrincipal 타입이 아닌 경우 null 반환
+        val principal = authentication.principal as? CustomUserPrincipal
+            ?: run {
+                logger.error("Invalid principal type: ${authentication.principal?.javaClass?.name}")
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(listOf())
+            }
 
-        logger.info("Admin upload list request by admin: ${principal.userId}, institution: ${principal.institutionId}")
+        logger.info("Admin upload list request by admin: ${principal.userId}, institution: ${principal.institutionId}, limit: $limit, offset: $offset")
 
-        val uploads = uploadService.getAllUploadsByInstitution(principal.institutionId!!)
+        val uploads = uploadService.getAllUploadsByInstitution(
+            institutionId = principal.institutionId!!,
+            limit = limit,
+            offset = offset
+        )
 
         return ResponseEntity.ok(uploads)
     }
