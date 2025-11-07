@@ -83,6 +83,8 @@ class SecurityConfig(
                     .requestMatchers("/api/admin/approve/**").hasRole("SYSTEM_ADMIN")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/test/**").permitAll()
+                    // 파일 경로 허용
+                    .requestMatchers("/api/files/**").permitAll()
                     // Swagger 경로는 환경에 따라 보호 여부 결정
                     .apply {
                         if (swaggerSecurityEnabled) {

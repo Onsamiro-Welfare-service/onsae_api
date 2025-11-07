@@ -25,8 +25,15 @@ class FileSizeExceededException(
 
 class FileStorageException(
     message: String = "File storage error",
-    code: String = "FILE_STORAGE_ERROR"
-) : BusinessException(message, code, HttpStatus.INTERNAL_SERVER_ERROR)
+    code: String = "FILE_STORAGE_ERROR",
+    cause: Throwable? = null
+) : BusinessException(message, code, HttpStatus.INTERNAL_SERVER_ERROR) {
+    init {
+        if (cause != null) {
+            initCause(cause)
+        }
+    }
+}
 
 class UploadNotFoundException(
     message: String = "Upload not found",
