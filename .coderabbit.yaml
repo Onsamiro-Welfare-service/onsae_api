@@ -1,0 +1,321 @@
+# .coderabbit.yaml
+# Kotlin + Spring Boot 프로젝트를 위한 균형잡힌 코드 리뷰 설정
+# 코드 품질을 향상시키되, 개발 속도를 해치지 않는 실용적인 구성
+
+# =============================================================================
+# GLOBAL SETTINGS
+# =============================================================================
+
+language: "ko-KR"
+
+tone_instructions: |
+  명확하고 실용적인 피드백을 제공하세요.
+  중요한 이슈(보안, 심각한 버그, 명백한 안티패턴)는 반드시 지적하되,
+  스타일이나 선호도 문제는 제안 수준으로 가볍게 다뤄주세요.
+  개선 방안은 구체적이고 바로 적용 가능한 형태로 제시해주세요.
+
+early_access: false
+enable_free_tier: true
+
+# =============================================================================
+# REVIEWS
+# =============================================================================
+
+reviews:
+  # chill 모드 - 중요한 것만 집중적으로
+  profile: "chill"
+
+  request_changes_workflow: false
+
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  high_level_summary_in_walkthrough: false
+
+  auto_title_placeholder: "@coderabbitai"
+  auto_title_instructions: |
+    Conventional Commits 형식 권장:
+    feat/fix/refactor/docs/chore 등 사용
+
+  review_status: true
+  commit_status: true
+  fail_commit_status: false
+
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: false
+  estimate_code_review_effort: true
+  assess_linked_issues: false
+  related_issues: false
+  related_prs: false
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: false
+  auto_assign_reviewers: false
+
+  in_progress_fortune: false
+  poem: false
+
+  # 빈 배열로 설정 (기본 라벨링 사용)
+  labeling_instructions: []
+
+  path_filters:
+    # 빌드 산출물 제외
+    - "!**/build/**"
+    - "!**/target/**"
+    - "!**/out/**"
+    - "!**/.gradle/**"
+    - "!**/.idea/**"
+    
+    # 의존성
+    - "!**/gradle/wrapper/**"
+    - "!**/gradlew*"
+    - "!**/*.jar"
+    
+    # 자동 생성
+    - "!**/generated/**"
+    - "!**/*Generated.kt"
+    
+    # 소스 코드
+    - "src/**/*.kt"
+    - "src/**/*.java"
+    - "src/**/*.sql"
+    - "src/**/application*.yml"
+    - "src/**/application*.properties"
+    - "**/Dockerfile"
+    - "**/*.md"
+
+  # 간소화된 경로별 지침
+  path_instructions:
+    - path: "src/main/kotlin/**/controller/**"
+      instructions: |
+        REST API 기본 원칙(적절한 HTTP 메서드, 상태 코드)과
+        입력 검증, 기본적인 예외 처리를 확인하세요.
+    
+    - path: "src/main/kotlin/**/service/**"
+      instructions: |
+        비즈니스 로직의 가독성과 명백한 N+1 쿼리 문제를 확인하세요.
+        트랜잭션 경계가 명확히 잘못되었다면 지적해주세요.
+    
+    - path: "src/main/kotlin/**/repository/**"
+      instructions: |
+        명백한 쿼리 성능 문제나 SQL Injection 위험이 있다면 지적하세요.
+    
+    - path: "src/main/kotlin/**/config/**"
+      instructions: |
+        민감한 정보 하드코딩 여부만 체크하세요.
+
+  abort_on_close: true
+  disable_cache: false
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+
+    ignore_title_keywords:
+      - "wip"
+      - "draft"
+      - "[skip]"
+
+    labels: []
+    drafts: false
+
+    # ⭐ 이 부분이 핵심! 모든 브랜치에서 리뷰
+    base_branches: [".*"]
+
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "renovate[bot]"
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    
+    unit_tests:
+      enabled: true
+
+  # 부담 줄인 Merge 전 체크
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    
+    title:
+      mode: "off"
+    
+    description:
+      mode: "off"
+    
+    issue_assessment:
+      mode: "off"
+    
+    # 핵심만 체크
+    custom_checks:
+      - name: "보안 필수 체크"
+        instructions: |
+          1. API 키, 비밀번호 같은 민감정보가 코드에 없는지만 확인
+          2. SQL Injection 명백한 위험만 체크
+      
+      - name: "성능 치명적 이슈"
+        instructions: |
+          1. 명백한 N+1 쿼리 문제
+          2. 무한 루프나 메모리 누수 가능성
+          위 두 가지만 체크하고 나머지는 넘어가세요.
+
+  tools:
+    # 핵심 도구만 활성화
+    
+    # Kotlin 기본 린터
+    detekt:
+      enabled: true
+    
+    # 보안 스캔 - 필수
+    gitleaks:
+      enabled: true
+    
+    # YAML 기본 체크
+    yamllint:
+      enabled: true
+    
+    # Dockerfile 체크
+    hadolint:
+      enabled: true
+    
+    # Markdown
+    markdownlint:
+      enabled: true
+    
+    # Shell 스크립트
+    shellcheck:
+      enabled: true
+    
+    # GitHub Actions
+    actionlint:
+      enabled: true
+    
+    # 의존성 취약점 - 필수
+    osvScanner:
+      enabled: true
+    
+    # 나머지는 끄기
+    sqlfluff:
+      enabled: false
+    pmd:
+      enabled: false
+    semgrep:
+      enabled: false
+    github-checks:
+      enabled: false
+    checkov:
+      enabled: false
+    eslint:
+      enabled: false
+    biome:
+      enabled: false
+    ruff:
+      enabled: false
+    flake8:
+      enabled: false
+    pylint:
+      enabled: false
+    phpstan:
+      enabled: false
+    phpmd:
+      enabled: false
+    phpcs:
+      enabled: false
+    rubocop:
+      enabled: false
+    swiftlint:
+      enabled: false
+    golangci-lint:
+      enabled: false
+    buf:
+      enabled: false
+    regal:
+      enabled: false
+    cppcheck:
+      enabled: false
+    circleci:
+      enabled: false
+    clippy:
+      enabled: false
+    prismaLint:
+      enabled: false
+    oxc:
+      enabled: false
+    shopifyThemeCheck:
+      enabled: false
+    luacheck:
+      enabled: false
+    brakeman:
+      enabled: false
+    dotenvLint:
+      enabled: false
+    htmlhint:
+      enabled: false
+    checkmake:
+      enabled: false
+    languagetool:
+      enabled: false
+    ast-grep:
+      essential_rules: false
+
+# =============================================================================
+# CHAT
+# =============================================================================
+
+chat:
+  art: false
+  auto_reply: true
+
+  integrations:
+    jira:
+      usage: "disabled"
+    
+    linear:
+      usage: "disabled"
+
+# =============================================================================
+# KNOWLEDGE BASE
+# =============================================================================
+
+knowledge_base:
+  opt_out: false
+
+  web_search:
+    enabled: true
+
+  code_guidelines:
+    enabled: false
+
+  learnings:
+    scope: "local"
+
+  issues:
+    scope: "local"
+
+  jira:
+    usage: "disabled"
+    project_keys: []
+
+  linear:
+    usage: "disabled"
+    team_keys: []
+
+  pull_requests:
+    scope: "local"
+
+  mcp:
+    usage: "disabled"
+    disabled_servers: []
+
+# =============================================================================
+# CODE GENERATION
+# =============================================================================
+
+code_generation:
+  docstrings:
+    language: "ko-KR"
+    path_instructions: []
+
+  unit_tests:
+    path_instructions: []

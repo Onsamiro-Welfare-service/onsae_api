@@ -16,6 +16,9 @@ spring:
         use_sql_comments: true
     open-in-view: false
 
+  flyway:
+    enabled: true
+
   jackson:
     property-naming-strategy: SNAKE_CASE
     serialization:
@@ -55,6 +58,9 @@ app:
 
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
+  swagger:
+    server-url: ${SWAGGER_SERVER_URL:http://localhost:8080}
 
   timezone: ${TIMEZONE:Asia/Seoul}
   locale: ${LOCALE:ko_KR}

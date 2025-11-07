@@ -1,6 +1,7 @@
 package com.onsae.api.user.entity
 
 import com.onsae.api.common.entity.BaseEntity
+import com.onsae.api.common.entity.SeverityLevel
 import com.onsae.api.institution.entity.Institution
 import com.onsae.api.survey.entity.QuestionAssignment
 import com.onsae.api.survey.entity.QuestionResponse
@@ -15,7 +16,7 @@ import java.time.LocalDateTime
 @Table(
     name = "users",
     uniqueConstraints = [
-        UniqueConstraint(columnNames = ["institution_id", "usercode"])
+        UniqueConstraint(columnNames = ["institution_id", "username"])
     ]
 )
 class User : BaseEntity() {
@@ -24,8 +25,11 @@ class User : BaseEntity() {
     @JoinColumn(name = "institution_id", nullable = false)
     var institution: Institution = Institution()
 
-    @Column(name = "usercode", nullable = false, length = 20)
-    var usercode: String = ""
+    @Column(name = "username", nullable = false, length = 100)
+    var username: String = ""
+
+    @Column(name = "password", nullable = false, length = 255)
+    var password: String = ""
 
     @Column(name = "name", nullable = false, length = 50)
     var name: String = ""

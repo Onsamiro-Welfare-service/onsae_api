@@ -15,6 +15,16 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+    properties:
+      hibernate:
+        type:
+          preferred_instant_jdbc_type: TIMESTAMP
+        globally_quoted_identifiers: true
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=15m
 
 server:
   port: ${SERVER_PORT:8080}
@@ -34,3 +44,11 @@ management:
       base-path: /actuator
       exposure:
         include: health,info,metrics,prometheus
+
+app:
+  swagger:
+    server-url: ${SWAGGER_SERVER_URL}
+    security:
+      enabled: true
+      username: ${SWAGGER_USERNAME:admin}
+      password: ${SWAGGER_PASSWORD:admin123!}

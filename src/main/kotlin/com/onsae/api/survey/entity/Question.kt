@@ -2,7 +2,7 @@ package com.onsae.api.survey.entity
 
 import com.onsae.api.common.entity.BaseEntity
 import com.onsae.api.institution.entity.Institution
-import com.onsae.api.user.entity.Admin
+import com.onsae.api.admin.entity.Admin
 import jakarta.persistence.*
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes

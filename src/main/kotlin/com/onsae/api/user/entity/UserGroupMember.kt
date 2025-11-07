@@ -1,5 +1,6 @@
 package com.onsae.api.user.entity
 
+import com.onsae.api.admin.entity.Admin
 import jakarta.persistence.*
 import java.time.LocalDateTime
 

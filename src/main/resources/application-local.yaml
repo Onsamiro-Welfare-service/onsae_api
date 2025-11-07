@@ -12,10 +12,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        type:
+          preferred_instant_jdbc_type: TIMESTAMP
+        globally_quoted_identifiers: true
 
-  h2:
-    console:
-      enabled: false
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=15m
 
 server:
   port: ${SERVER_PORT:8080}
@@ -30,3 +35,9 @@ logging:
 app:
   file-upload:
     path: ./uploads-local
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:8081
+  swagger:
+    server-url: http://localhost:8080
+    security:
+      enabled: false
