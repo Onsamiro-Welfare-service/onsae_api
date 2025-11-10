@@ -263,4 +263,30 @@ class UserService(
             updatedAt = savedUser.updatedAt
         )
     }
+
+    /**
+     * 사용자를 소프트 삭제합니다 (관리자용).
+     * is_active를 false로 설정하여 비활성화합니다.
+     * 같은 기관의 사용자만 삭제 가능합니다.
+     * 
+     * @param userId 삭제할 사용자 ID
+     * @param adminInstitutionId 관리자의 기관 ID
+     */
+    @Transactional
+    fun deleteUser(userId: Long, adminInstitutionId: Long) {
+        logger.info("Deleting user: $userId by admin from institution: $adminInstitutionId")
+
+        val user = userRepository.findById(userId)
+            .orElseThrow { InvalidCredentialsException("존재하지 않는 사용자입니다") }
+
+        if (user.institution.id != adminInstitutionId) {
+            throw InvalidCredentialsException("해당 사용자에 대한 접근 권한이 없습니다")
+        }
+
+        // 소프트 삭제: is_active를 false로 설정
+        user.isActive = false
+        userRepository.save(user)
+
+        logger.info("User deactivated successfully: $userId")
+    }
 }
