@@ -73,7 +73,8 @@ class SecurityConfig(
                     .requestMatchers("GET", "/api/user").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("GET", "/api/user/*/profile").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("PUT", "/api/user/*/profile").hasAnyRole("ADMIN", "STAFF")
-                    .requestMatchers("DELETE", "/api/user/*").hasAnyRole("ADMIN", "STAFF")
+                    // ID는 숫자만 허용
+                    .requestMatchers("DELETE", "/api/user/{id:[0-9]+}").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/categories/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/user-groups/**").hasAnyRole("ADMIN", "STAFF")
                     .requestMatchers("/api/questions/**").hasAnyRole("ADMIN", "STAFF")
