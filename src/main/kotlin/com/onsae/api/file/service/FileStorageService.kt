@@ -27,7 +27,6 @@ import java.util.*
  * - 파일 타입 검증: 허용된 파일 타입만 업로드 가능
  * - 파일 크기 검증: 최대 파일 크기 제한
  * - 파일명 생성: 중복 방지를 위한 고유 파일명 생성
- * - 디렉토리 관리: 날짜별로 디렉토리 생성하여 관리
  */
 @Service
 class FileStorageService(
@@ -78,16 +77,9 @@ class FileStorageService(
         val originalFilename = file.originalFilename ?: "unknown"
         val extension = getFileExtension(originalFilename)
         val fileName = generateFileName(extension)
-        val directoryPath = getDateDirectory()
 
-        // 4. 디렉토리 생성 (없으면 생성)
-        val targetDirectory = uploadPath.resolve(directoryPath)
-        if (!Files.exists(targetDirectory)) {
-            Files.createDirectories(targetDirectory)
-        }
-
-        // 5. 파일 저장
-        val targetPath = targetDirectory.resolve(fileName)
+        // 4. 파일 저장 (업로드 경로에 직접 저장)
+        val targetPath = uploadPath.resolve(fileName)
         try {
             // use 블록을 사용하여 스트림이 항상 닫히도록 보장
             // Kotlin의 use 함수는 finally 블록에서 자동으로 close()를 호출합니다
@@ -104,7 +96,7 @@ class FileStorageService(
         return FileInfo(
             fileName = fileName,
             originalName = originalFilename,
-            filePath = directoryPath.resolve(fileName).toString().replace("\\", "/"),
+            filePath = fileName, // 파일명만 저장 (날짜별 디렉토리 구조 제거)
             fileSize = file.size,
             mimeType = file.contentType
         )
@@ -164,26 +156,12 @@ class FileStorageService(
     }
 
     /**
-     * 날짜별 디렉토리 경로를 생성합니다.
-     * 형식: yyyy/MM/dd
-     * @return 디렉토리 경로
-     */
-    private fun getDateDirectory(): Path {
-        val now = LocalDateTime.now()
-        return Paths.get(
-            now.format(DateTimeFormatter.ofPattern("yyyy")),
-            now.format(DateTimeFormatter.ofPattern("MM")),
-            now.format(DateTimeFormatter.ofPattern("dd"))
-        )
-    }
-
-    /**
      * 파일 정보를 담는 데이터 클래스
      */
     data class FileInfo(
         val fileName: String,
         val originalName: String,
-        val filePath: String, // 상대 경로 (예: "2024/11/06/20241106104630_abc123.jpg")
+        val filePath: String, // 파일명 (예: "20241106104630_abc123.jpg")
         val fileSize: Long,
         val mimeType: String?
     )

@@ -218,4 +218,45 @@ class UserController(
         val users = userService.getAllUsers(principal.institutionId!!)
         return ResponseEntity.ok(users)
     }
+
+    @DeleteMapping("/{userId}")
+    @Operation(
+        summary = "사용자 삭제 (소프트 삭제)",
+        description = "관리자가 특정 사용자를 소프트 삭제합니다. is_active를 false로 설정하여 비활성화합니다. 같은 기관의 사용자만 삭제 가능합니다. 관리자 권한이 필요합니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "사용자 삭제 성공"),
+            ApiResponse(responseCode = "401", description = "인증 필요"),
+            ApiResponse(responseCode = "403", description = "권한 부족 (다른 기관의 사용자)"),
+            ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+        ]
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    fun deleteUser(
+        @PathVariable userId: Long,
+        authentication: Authentication
+    ): ResponseEntity<Map<String, String>> {
+        // 안전한 캐스팅: principal이 CustomUserPrincipal 타입이 아닌 경우 null 반환
+        val principal = authentication.principal as? CustomUserPrincipal
+            ?: run {
+                logger.error("Invalid principal type: ${authentication.principal?.javaClass?.name}")
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(mapOf(
+                        "message" to "인증 정보가 올바르지 않습니다",
+                        "code" to "INVALID_AUTHENTICATION"
+                    ))
+            }
+
+        logger.info("User deletion request: $userId by admin: ${principal.userId}, institution: ${principal.institutionId}")
+
+        userService.deleteUser(userId, principal.institutionId!!)
+
+        logger.info("User deleted successfully: $userId")
+
+        return ResponseEntity.ok(mapOf(
+            "message" to "사용자가 성공적으로 삭제되었습니다",
+            "code" to "USER_DELETED"
+        ))
+    }
 }
